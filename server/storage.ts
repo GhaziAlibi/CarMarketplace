@@ -3,7 +3,8 @@ import session from "express-session";
 import createMemoryStore from "memorystore";
 import connectPg from "connect-pg-simple";
 import { db, pool } from "./db";
-import { eq, and, or, desc, gte, lte, like, asc, sql } from "drizzle-orm";
+import { eq, and, or, desc, gte, lte, like, asc } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
 // For SessionStore type
 import { Store } from "express-session";

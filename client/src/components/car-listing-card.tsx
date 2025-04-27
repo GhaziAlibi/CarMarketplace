@@ -91,11 +91,21 @@ const CarListingCard: React.FC<CarListingCardProps> = ({ car, showroomName, isFa
           </div>
           <div className="mt-4">
             <div className="flex flex-wrap gap-2">
-              {features && features.slice(0, 3).map((feature, index) => (
-                <Badge key={index} variant="outline" className="bg-gray-100 text-gray-800">
-                  {feature}
-                </Badge>
-              ))}
+              {features && typeof features === 'string' ? (
+                // Handle features as a comma-separated string
+                features.split(',').slice(0, 3).map((feature, index) => (
+                  <Badge key={index} variant="outline" className="bg-gray-100 text-gray-800">
+                    {feature.trim()}
+                  </Badge>
+                ))
+              ) : features && Array.isArray(features) ? (
+                // Handle features as an array
+                features.slice(0, 3).map((feature, index) => (
+                  <Badge key={index} variant="outline" className="bg-gray-100 text-gray-800">
+                    {feature}
+                  </Badge>
+                ))
+              ) : null}
             </div>
           </div>
           <div className="mt-6 flex justify-between items-center">
