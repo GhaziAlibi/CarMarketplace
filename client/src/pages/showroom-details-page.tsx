@@ -225,6 +225,21 @@ const ShowroomDetailsPage: React.FC = () => {
                     ({showroom.reviewCount} reviews)
                   </span>
                 </div>
+                
+                {/* Edit button for showroom owners */}
+                {user && user.role === "seller" && user.id === showroom.userId && (
+                  <Button 
+                    variant="secondary" 
+                    size="sm" 
+                    className="mt-4 md:mt-0 md:ml-auto"
+                    asChild
+                  >
+                    <Link href="/seller/edit-showroom">
+                      <PanelLeft className="h-4 w-4 mr-2" />
+                      Edit Showroom
+                    </Link>
+                  </Button>
+                )}
               </div>
             </div>
           </div>

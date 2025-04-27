@@ -119,7 +119,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get the authenticated seller's showroom
+  app.get("/api/seller/showroom", requireRole(UserRole.SELLER), async (req, res) => {
+    try {
+      const showroom = await storage.getShowroomByUserId(req.user.id);
+      
+      if (!showroom) {
+        return res.status(404).json({ error: "Showroom not found" });
+      }
+      
+      res.json(showroom);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get seller's showroom" });
+    }
+  });
+
   app.put("/api/showrooms/:id", requireAuth, async (req, res) => {
+    try {
+      const showroomId = parseInt(req.params.id);
+      const showroom = await storage.getShowroom(showroomId);
+      
+      if (!showroom) {
+        return res.status(404).json({ error: "Showroom not found" });
+      }
+      
+      // Only the owner or admin can update the showroom
+      if (showroom.userId !== req.user.id && req.user.role !== UserRole.ADMIN) {
+        return res.status(403).json({ error: "You don't have permission to update this showroom" });
+      }
+      
+      const updatedShowroom = await storage.updateShowroom(showroomId, req.body);
+      res.json(updatedShowroom);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update showroom" });
+    }
+  });
+  
+  // Allow PATCH method for partial updates
+  app.patch("/api/showrooms/:id", requireAuth, async (req, res) => {
     try {
       const showroomId = parseInt(req.params.id);
       const showroom = await storage.getShowroom(showroomId);
