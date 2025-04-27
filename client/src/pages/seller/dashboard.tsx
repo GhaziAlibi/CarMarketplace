@@ -68,7 +68,7 @@ const SellerDashboard: React.FC = () => {
   const {
     data: cars = [],
     isLoading: isLoadingCars,
-  } = useQuery({
+  } = useQuery<any[]>({
     queryKey: [`/api/showrooms/${showroom?.id}/cars`],
     enabled: !!showroom?.id,
   });
@@ -77,7 +77,7 @@ const SellerDashboard: React.FC = () => {
   const {
     data: messages = [],
     isLoading: isLoadingMessages,
-  } = useQuery({
+  } = useQuery<any[]>({
     queryKey: [`/api/messages`],
     enabled: !!user,
   });

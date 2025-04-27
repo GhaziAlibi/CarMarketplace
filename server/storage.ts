@@ -466,8 +466,16 @@ export class DatabaseStorage implements IStorage {
     try {
       // Use direct SQL to handle column name differences
       const result = await db.execute(sql`
-        SELECT * FROM messages 
-        WHERE sender_id = ${userId} OR receiver_id = ${userId}
+        SELECT 
+          id,
+          from_user_id as "senderId",
+          to_user_id as "receiverId",
+          car_id as "carId",
+          message as "content",
+          is_read as "isRead",
+          created_at as "createdAt"
+        FROM messages 
+        WHERE from_user_id = ${userId} OR to_user_id = ${userId}
         ORDER BY created_at DESC
       `);
       
@@ -479,16 +487,28 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getConversation(user1Id: number, user2Id: number): Promise<Message[]> {
-    return await db
-      .select()
-      .from(messages)
-      .where(
-        or(
-          and(eq(messages.senderId, user1Id), eq(messages.receiverId, user2Id)),
-          and(eq(messages.senderId, user2Id), eq(messages.receiverId, user1Id))
-        )
-      )
-      .orderBy(asc(messages.createdAt));
+    try {
+      // Use direct SQL to handle column name differences
+      const result = await db.execute(sql`
+        SELECT 
+          id,
+          from_user_id as "senderId",
+          to_user_id as "receiverId",
+          car_id as "carId",
+          message as "content",
+          is_read as "isRead",
+          created_at as "createdAt"
+        FROM messages 
+        WHERE (from_user_id = ${user1Id} AND to_user_id = ${user2Id})
+           OR (from_user_id = ${user2Id} AND to_user_id = ${user1Id})
+        ORDER BY created_at ASC
+      `);
+      
+      return result.rows as Message[];
+    } catch (error) {
+      console.error('Error getting conversation:', error);
+      return [];
+    }
   }
 
   // Favorite operations
