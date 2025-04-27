@@ -181,10 +181,13 @@ export class DatabaseStorage implements IStorage {
       ];
     }
     
+    // Create car with required fields and explicit defaults
     const [car] = await db
       .insert(cars)
       .values({
         ...carData,
+        status: carData.status || "available",
+        description: carData.description || null,
         isFeatured: false
       })
       .returning();
@@ -203,8 +206,9 @@ export class DatabaseStorage implements IStorage {
   async deleteCar(id: number): Promise<boolean> {
     const result = await db
       .delete(cars)
-      .where(eq(cars.id, id));
-    return result.count > 0;
+      .where(eq(cars.id, id))
+      .returning();
+    return result.length > 0;
   }
 
   async getAllCars(): Promise<Car[]> {
@@ -344,8 +348,9 @@ export class DatabaseStorage implements IStorage {
   async deleteFavorite(id: number): Promise<boolean> {
     const result = await db
       .delete(favorites)
-      .where(eq(favorites.id, id));
-    return result.count > 0;
+      .where(eq(favorites.id, id))
+      .returning();
+    return result.length > 0;
   }
 
   async getFavoritesByUser(userId: number): Promise<Favorite[]> {
@@ -660,4 +665,5 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Switch from in-memory storage to database storage
+export const storage = new DatabaseStorage();
