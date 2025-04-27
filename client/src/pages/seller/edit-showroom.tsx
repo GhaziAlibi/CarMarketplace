@@ -54,7 +54,7 @@ const SellerEditShowroom: React.FC = () => {
     data: showroom, 
     isLoading: isLoadingShowroom, 
     isError: isErrorShowroom 
-  } = useQuery({
+  } = useQuery<Showroom>({
     queryKey: ["/api/seller/showroom"],
     enabled: !!user && user.role === "seller",
   });
