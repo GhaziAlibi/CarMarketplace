@@ -237,7 +237,7 @@ const SellerEditShowroom: React.FC = () => {
                 <CardContent>
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                      <Tabs value={activeTab} className="hidden">
+                      <Tabs value={activeTab}>
                         <TabsContent value="general" className="mt-0 space-y-6">
                           <FormField
                             control={form.control}

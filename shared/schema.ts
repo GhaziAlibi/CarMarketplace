@@ -38,6 +38,8 @@ export const showrooms = pgTable("showrooms", {
   address: text("address"),
   city: text("city").notNull(),
   country: text("country").notNull(),
+  phone: text("phone"),
+  email: text("email"),
   rating: integer("rating").default(0),
   reviewCount: integer("review_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
