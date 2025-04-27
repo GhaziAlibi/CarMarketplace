@@ -64,7 +64,7 @@ const ShowroomCard: React.FC<ShowroomCardProps> = ({ showroom, carCount }) => {
         <div className="mt-6">
           <Button asChild variant="outline" className="w-full border-primary text-primary hover:bg-primary hover:text-white">
             <Link href={`/showrooms/${id}`}>
-              <a>View Inventory</a>
+              View Inventory
             </Link>
           </Button>
         </div>

@@ -94,13 +94,37 @@ const SellerEditShowroom: React.FC = () => {
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: async (data: ShowroomFormValues) => {
-      if (!showroom) return null;
-      console.log("Submitting form data:", data);
-      const res = await apiRequest("PATCH", `/api/showrooms/${showroom.id}`, data);
-      return await res.json();
+    mutationFn: async (data: Partial<ShowroomFormValues>) => {
+      if (!showroom) {
+        console.error("No showroom found");
+        return null;
+      }
+      
+      console.log("Submitting form data to API:", data);
+      
+      try {
+        const res = await apiRequest(
+          "PATCH", 
+          `/api/showrooms/${showroom.id}`, 
+          data
+        );
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error("API error response:", errorText);
+          throw new Error(`API returned error: ${res.status} ${errorText}`);
+        }
+        
+        const result = await res.json();
+        console.log("API response:", result);
+        return result;
+      } catch (error) {
+        console.error("API request failed:", error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Mutation succeeded with data:", data);
       toast({
         title: "Success",
         description: "Your showroom has been updated",
@@ -159,11 +183,12 @@ const SellerEditShowroom: React.FC = () => {
             <div className="text-center">
               <h1 className="text-3xl font-bold text-gray-900">Showroom Not Found</h1>
               <p className="mt-4 text-gray-500">We couldn't find your showroom. Please contact support.</p>
-              <Button className="mt-8" asChild>
-                <a href="/seller/dashboard">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Dashboard
-                </a>
+              <Button 
+                className="mt-8" 
+                onClick={() => window.location.href = "/seller/dashboard"}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Dashboard
               </Button>
             </div>
           </div>
@@ -184,11 +209,12 @@ const SellerEditShowroom: React.FC = () => {
               <h1 className="text-3xl font-bold">Edit Showroom</h1>
               <p className="text-gray-500 mt-1">Customize your showroom's appearance and information</p>
             </div>
-            <Button variant="outline" asChild>
-              <a href="/seller/dashboard">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Dashboard
-              </a>
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.href = "/seller/dashboard"}
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Dashboard
             </Button>
           </div>
 
