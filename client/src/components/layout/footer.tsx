@@ -10,10 +10,8 @@ const Footer: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <Link href="/">
-              <a className="text-2xl font-bold">
-                Auto<span className="text-accent">Market</span>
-              </a>
+            <Link href="/" className="text-2xl font-bold">
+              Auto<span className="text-accent">Market</span>
             </Link>
             <p className="mt-4 text-gray-300">
               The premium marketplace for luxury cars. Connect with trusted showrooms and find your dream vehicle.
@@ -54,18 +52,18 @@ const Footer: React.FC = () => {
             <h3 className="text-lg font-medium">Quick Links</h3>
             <ul className="mt-4 space-y-2">
               <li>
-                <Link href="/">
-                  <a className="text-gray-300 hover:text-white transition-colors">Home</a>
+                <Link href="/" className="text-gray-300 hover:text-white transition-colors">
+                  Home
                 </Link>
               </li>
               <li>
-                <Link href="/cars">
-                  <a className="text-gray-300 hover:text-white transition-colors">Browse Cars</a>
+                <Link href="/cars" className="text-gray-300 hover:text-white transition-colors">
+                  Browse Cars
                 </Link>
               </li>
               <li>
-                <Link href="/showrooms">
-                  <a className="text-gray-300 hover:text-white transition-colors">Showrooms</a>
+                <Link href="/showrooms" className="text-gray-300 hover:text-white transition-colors">
+                  Showrooms
                 </Link>
               </li>
               <li>
@@ -85,18 +83,18 @@ const Footer: React.FC = () => {
             <h3 className="text-lg font-medium">For Sellers</h3>
             <ul className="mt-4 space-y-2">
               <li>
-                <Link href="/auth">
-                  <a className="text-gray-300 hover:text-white transition-colors">Join as Seller</a>
+                <Link href="/auth" className="text-gray-300 hover:text-white transition-colors">
+                  Join as Seller
                 </Link>
               </li>
               <li>
-                <Link href="/seller/dashboard">
-                  <a className="text-gray-300 hover:text-white transition-colors">Seller Dashboard</a>
+                <Link href="/seller/dashboard" className="text-gray-300 hover:text-white transition-colors">
+                  Seller Dashboard
                 </Link>
               </li>
               <li>
-                <Link href="/seller/add-listing">
-                  <a className="text-gray-300 hover:text-white transition-colors">Add Listings</a>
+                <Link href="/seller/add-listing" className="text-gray-300 hover:text-white transition-colors">
+                  Add Listings
                 </Link>
               </li>
               <li>

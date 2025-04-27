@@ -8,6 +8,7 @@ import { insertUserSchema, User as SelectUser, InsertUser, LoginCredentials, log
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
 type AuthContextType = {
   user: SelectUser | null;
