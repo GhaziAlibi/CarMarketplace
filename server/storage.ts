@@ -309,14 +309,34 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllCars(): Promise<Car[]> {
-    return await db.select().from(cars);
+    try {
+      // Use direct SQL to handle column name differences
+      const result = await db.execute(sql`
+        SELECT * FROM cars
+        ORDER BY created_at DESC
+      `);
+      
+      return result.rows as Car[];
+    } catch (error) {
+      console.error('Error getting all cars:', error);
+      return [];
+    }
   }
 
   async getCarsByShowroom(showroomId: number): Promise<Car[]> {
-    return await db
-      .select()
-      .from(cars)
-      .where(eq(cars.showroomId, showroomId));
+    try {
+      // Use direct SQL to handle column name differences
+      const result = await db.execute(sql`
+        SELECT * FROM cars
+        WHERE showroom_id = ${showroomId}
+        ORDER BY created_at DESC
+      `);
+      
+      return result.rows as Car[];
+    } catch (error) {
+      console.error('Error getting showroom cars:', error);
+      return [];
+    }
   }
 
   async getFeaturedCars(limit: number = 6): Promise<Car[]> {
@@ -336,51 +356,81 @@ export class DatabaseStorage implements IStorage {
   }
 
   async searchCars(params: CarSearchParams): Promise<Car[]> {
-    // Start with a base query
-    let baseQuery = db.select().from(cars);
-    let conditions = [];
-    
-    if (params.make) {
-      conditions.push(like(cars.make, `%${params.make}%`));
-    }
-    
-    if (params.model) {
-      conditions.push(like(cars.model, `%${params.model}%`));
-    }
-    
-    if (params.category) {
-      conditions.push(eq(cars.category, params.category));
-    }
-    
-    if (params.year) {
-      conditions.push(eq(cars.year, params.year));
-    }
-    
-    if (params.transmission) {
-      conditions.push(eq(cars.transmission, params.transmission));
-    }
-    
-    if (params.fuelType) {
-      conditions.push(eq(cars.fuelType, params.fuelType));
-    }
-    
-    if (params.priceRange) {
-      const [min, max] = params.priceRange.split('-').map(Number);
-      if (min && !max) {
-        conditions.push(gte(cars.price, min));
-      } else if (!min && max) {
-        conditions.push(lte(cars.price, max));
-      } else if (min && max) {
-        conditions.push(and(gte(cars.price, min), lte(cars.price, max)));
+    try {
+      let conditions: string[] = [];
+      let queryParams: any[] = [];
+      let paramCounter = 1;
+
+      if (params.make) {
+        conditions.push(`make ILIKE $${paramCounter}`);
+        queryParams.push(`%${params.make}%`);
+        paramCounter++;
       }
+
+      if (params.model) {
+        conditions.push(`model ILIKE $${paramCounter}`);
+        queryParams.push(`%${params.model}%`);
+        paramCounter++;
+      }
+
+      if (params.category) {
+        conditions.push(`category = $${paramCounter}`);
+        queryParams.push(params.category);
+        paramCounter++;
+      }
+
+      if (params.year) {
+        conditions.push(`year = $${paramCounter}`);
+        queryParams.push(params.year);
+        paramCounter++;
+      }
+
+      if (params.transmission) {
+        conditions.push(`transmission = $${paramCounter}`);
+        queryParams.push(params.transmission);
+        paramCounter++;
+      }
+
+      if (params.fuelType) {
+        conditions.push(`fuel_type = $${paramCounter}`);
+        queryParams.push(params.fuelType);
+        paramCounter++;
+      }
+
+      if (params.priceRange) {
+        const [min, max] = params.priceRange.split('-').map(Number);
+        if (min && !max) {
+          conditions.push(`price >= $${paramCounter}`);
+          queryParams.push(min);
+          paramCounter++;
+        } else if (!min && max) {
+          conditions.push(`price <= $${paramCounter}`);
+          queryParams.push(max);
+          paramCounter++;
+        } else if (min && max) {
+          conditions.push(`price >= $${paramCounter} AND price <= $${paramCounter + 1}`);
+          queryParams.push(min, max);
+          paramCounter += 2;
+        }
+      }
+
+      // Build the SQL query
+      let query = 'SELECT * FROM cars';
+      if (conditions.length > 0) {
+        query += ' WHERE ' + conditions.join(' AND ');
+      }
+      query += ' ORDER BY created_at DESC';
+
+      const result = await db.execute({
+        text: query, 
+        values: queryParams
+      });
+
+      return result.rows as Car[];
+    } catch (error) {
+      console.error('Error searching cars:', error);
+      return [];
     }
-    
-    // Apply all conditions if there are any
-    if (conditions.length > 0) {
-      return await baseQuery.where(and(...conditions));
-    }
-    
-    return await baseQuery;
   }
 
   // Message operations
