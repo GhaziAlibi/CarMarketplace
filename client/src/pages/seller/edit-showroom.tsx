@@ -7,6 +7,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Redirect } from "wouter";
+import { Showroom } from "@shared/schema";
 
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
@@ -55,6 +56,7 @@ const SellerEditShowroom: React.FC = () => {
     isError: isErrorShowroom 
   } = useQuery({
     queryKey: ["/api/seller/showroom"],
+    enabled: !!user && user.role === "seller",
   });
 
   // Form setup
