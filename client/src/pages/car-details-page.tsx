@@ -382,12 +382,25 @@ const CarDetailsPage: React.FC = () => {
                     <TabsContent value="features" className="mt-4">
                       <h3 className="font-semibold text-lg mb-2">Features</h3>
                       <div className="flex flex-wrap gap-2 mt-4">
-                        {car.features && car.features.length > 0 ? (
-                          car.features.map((feature: string, index: number) => (
-                            <Badge variant="outline" key={index} className="bg-gray-100 text-gray-800">
-                              {feature}
-                            </Badge>
-                          ))
+                        {car.features ? (
+                          // Handle both string and array formats for features
+                          Array.isArray(car.features) ? (
+                            // If it's an array, map through it
+                            car.features.map((feature: string, index: number) => (
+                              <Badge variant="outline" key={index} className="bg-gray-100 text-gray-800">
+                                {feature}
+                              </Badge>
+                            ))
+                          ) : (
+                            // If it's a string, split by commas and map
+                            typeof car.features === 'string' ? 
+                              car.features.split(',').map((feature: string, index: number) => (
+                                <Badge variant="outline" key={index} className="bg-gray-100 text-gray-800">
+                                  {feature.trim()}
+                                </Badge>
+                              ))
+                            : null
+                          )
                         ) : (
                           <p className="text-gray-500">No features listed for this vehicle.</p>
                         )}
