@@ -64,59 +64,57 @@ const CarListingCard: React.FC<CarListingCardProps> = ({ car, showroomName, isFa
 
   return (
     <Card className="overflow-hidden shadow-lg rounded-lg cursor-pointer transition duration-300 hover:shadow-xl">
-      <Link href={`/cars/${id}`}>
-        <a className="block">
-          <div className="relative">
-            <img 
-              src={images && images.length > 0 ? images[0] : "https://placehold.co/600x400?text=No+Image"} 
-              alt={title}
-              className="h-60 w-full object-cover"
-            />
-            {isFeatured && (
-              <div className="absolute top-0 right-0 m-4">
-                <Badge className="bg-accent hover:bg-accent-light">Featured</Badge>
-              </div>
+      <Link href={`/cars/${id}`} className="block">
+        <div className="relative">
+          <img 
+            src={images && images.length > 0 ? images[0] : "https://placehold.co/600x400?text=No+Image"} 
+            alt={title}
+            className="h-60 w-full object-cover"
+          />
+          {isFeatured && (
+            <div className="absolute top-0 right-0 m-4">
+              <Badge className="bg-accent hover:bg-accent-light">Featured</Badge>
+            </div>
+          )}
+        </div>
+        <CardContent className="p-6">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-bold text-secondary">{title}</h3>
+            <span className="font-bold text-accent">{formattedPrice}</span>
+          </div>
+          <p className="mt-2 text-sm text-gray-500">
+            {year} • {mileage.toLocaleString()} miles • {transmission} • {fuelType}
+          </p>
+          <div className="mt-4 flex items-center text-sm text-gray-500">
+            <MapPin className="h-4 w-4 text-accent mr-2" />
+            <span>{showroomName}</span>
+          </div>
+          <div className="mt-4">
+            <div className="flex flex-wrap gap-2">
+              {features && features.slice(0, 3).map((feature, index) => (
+                <Badge key={index} variant="outline" className="bg-gray-100 text-gray-800">
+                  {feature}
+                </Badge>
+              ))}
+            </div>
+          </div>
+          <div className="mt-6 flex justify-between items-center">
+            <Button variant="link" className="text-primary p-0 hover:text-primary-dark">
+              <Eye className="mr-1 h-4 w-4" /> View Details
+            </Button>
+            {user && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleToggleFavorite}
+                className={`flex items-center ${isFavorited ? "text-accent" : "text-gray-500 hover:text-accent"}`}
+              >
+                <Heart className={`mr-1 h-4 w-4 ${isFavorited ? "fill-current" : ""}`} />
+                <span>{isFavorited ? "Saved" : "Save"}</span>
+              </Button>
             )}
           </div>
-          <CardContent className="p-6">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-bold text-secondary">{title}</h3>
-              <span className="font-bold text-accent">{formattedPrice}</span>
-            </div>
-            <p className="mt-2 text-sm text-gray-500">
-              {year} • {mileage.toLocaleString()} miles • {transmission} • {fuelType}
-            </p>
-            <div className="mt-4 flex items-center text-sm text-gray-500">
-              <MapPin className="h-4 w-4 text-accent mr-2" />
-              <span>{showroomName}</span>
-            </div>
-            <div className="mt-4">
-              <div className="flex flex-wrap gap-2">
-                {features && features.slice(0, 3).map((feature, index) => (
-                  <Badge key={index} variant="outline" className="bg-gray-100 text-gray-800">
-                    {feature}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            <div className="mt-6 flex justify-between items-center">
-              <Button variant="link" className="text-primary p-0 hover:text-primary-dark">
-                <Eye className="mr-1 h-4 w-4" /> View Details
-              </Button>
-              {user && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleToggleFavorite}
-                  className={`flex items-center ${isFavorited ? "text-accent" : "text-gray-500 hover:text-accent"}`}
-                >
-                  <Heart className={`mr-1 h-4 w-4 ${isFavorited ? "fill-current" : ""}`} />
-                  <span>{isFavorited ? "Saved" : "Save"}</span>
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </a>
+        </CardContent>
       </Link>
     </Card>
   );
