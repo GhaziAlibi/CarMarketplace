@@ -34,6 +34,7 @@ export const showrooms = pgTable("showrooms", {
   name: text("name").notNull(),
   description: text("description"),
   logo: text("logo"),
+  headerImage: text("header_image"),
   address: text("address"),
   city: text("city").notNull(),
   country: text("country").notNull(),
