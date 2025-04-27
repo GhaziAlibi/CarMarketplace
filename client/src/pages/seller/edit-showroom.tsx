@@ -94,8 +94,9 @@ const SellerEditShowroom: React.FC = () => {
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: ShowroomFormValues) => {
       if (!showroom) return null;
+      console.log("Submitting form data:", data);
       const res = await apiRequest("PATCH", `/api/showrooms/${showroom.id}`, data);
       return await res.json();
     },
@@ -109,6 +110,7 @@ const SellerEditShowroom: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: [`/api/showrooms/${showroom?.id}`] });
     },
     onError: (error: Error) => {
+      console.error("Update error:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to update showroom",
@@ -118,6 +120,7 @@ const SellerEditShowroom: React.FC = () => {
   });
 
   const onSubmit = (data: ShowroomFormValues) => {
+    console.log("Form submitted with data:", data);
     updateMutation.mutate(data);
   };
 

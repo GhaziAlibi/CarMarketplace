@@ -159,20 +159,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/showrooms/:id", requireAuth, async (req, res) => {
     try {
       const showroomId = parseInt(req.params.id);
+      console.log(`Updating showroom ${showroomId} with data:`, req.body);
+      
       const showroom = await storage.getShowroom(showroomId);
       
       if (!showroom) {
+        console.log("Showroom not found with ID:", showroomId);
         return res.status(404).json({ error: "Showroom not found" });
       }
       
       // Only the owner or admin can update the showroom
       if (showroom.userId !== req.user.id && req.user.role !== UserRole.ADMIN) {
+        console.log("Permission denied. User ID:", req.user.id, "Showroom User ID:", showroom.userId);
         return res.status(403).json({ error: "You don't have permission to update this showroom" });
       }
       
       const updatedShowroom = await storage.updateShowroom(showroomId, req.body);
+      console.log("Showroom updated successfully:", updatedShowroom);
       res.json(updatedShowroom);
     } catch (error) {
+      console.error("Error updating showroom:", error);
       res.status(500).json({ error: "Failed to update showroom" });
     }
   });
