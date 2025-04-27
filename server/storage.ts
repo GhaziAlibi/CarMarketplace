@@ -443,14 +443,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createMessage(messageData: InsertMessage): Promise<Message> {
-    const [message] = await db
-      .insert(messages)
-      .values({
-        ...messageData,
-        isRead: false
-      })
-      .returning();
-    return message;
+    try {
+      const [message] = await db
+        .insert(messages)
+        .values({
+          senderId: messageData.senderId,
+          receiverId: messageData.receiverId,
+          carId: messageData.carId || null,
+          content: messageData.content,
+          isRead: false
+        })
+        .returning();
+      return message;
+    } catch (error) {
+      console.error('Error creating message:', error);
+      throw error;
+    }
   }
 
   async updateMessage(id: number, messageData: Partial<Message>): Promise<Message | undefined> {
@@ -464,22 +472,19 @@ export class DatabaseStorage implements IStorage {
 
   async getMessagesByUser(userId: number): Promise<Message[]> {
     try {
-      // Use direct SQL to handle column name differences
-      const result = await db.execute(sql`
-        SELECT 
-          id,
-          from_user_id as "senderId",
-          to_user_id as "receiverId",
-          car_id as "carId",
-          message as "content",
-          is_read as "isRead",
-          created_at as "createdAt"
-        FROM messages 
-        WHERE from_user_id = ${userId} OR to_user_id = ${userId}
-        ORDER BY created_at DESC
-      `);
+      // Use our schema property names (which are properly mapped to DB column names)
+      const result = await db
+        .select()
+        .from(messages)
+        .where(
+          or(
+            eq(messages.senderId, userId),
+            eq(messages.receiverId, userId)
+          )
+        )
+        .orderBy(desc(messages.createdAt));
       
-      return result.rows as Message[];
+      return result;
     } catch (error) {
       console.error('Error getting messages for user:', error);
       return [];
@@ -488,23 +493,25 @@ export class DatabaseStorage implements IStorage {
 
   async getConversation(user1Id: number, user2Id: number): Promise<Message[]> {
     try {
-      // Use direct SQL to handle column name differences
-      const result = await db.execute(sql`
-        SELECT 
-          id,
-          from_user_id as "senderId",
-          to_user_id as "receiverId",
-          car_id as "carId",
-          message as "content",
-          is_read as "isRead",
-          created_at as "createdAt"
-        FROM messages 
-        WHERE (from_user_id = ${user1Id} AND to_user_id = ${user2Id})
-           OR (from_user_id = ${user2Id} AND to_user_id = ${user1Id})
-        ORDER BY created_at ASC
-      `);
+      // Use our schema property names (which are properly mapped to DB column names)
+      const result = await db
+        .select()
+        .from(messages)
+        .where(
+          or(
+            and(
+              eq(messages.senderId, user1Id),
+              eq(messages.receiverId, user2Id)
+            ),
+            and(
+              eq(messages.senderId, user2Id),
+              eq(messages.receiverId, user1Id)
+            )
+          )
+        )
+        .orderBy(asc(messages.createdAt));
       
-      return result.rows as Message[];
+      return result;
     } catch (error) {
       console.error('Error getting conversation:', error);
       return [];

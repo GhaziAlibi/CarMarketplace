@@ -83,10 +83,10 @@ export const insertCarSchema = createInsertSchema(cars).omit({
 // Message table for communication between buyers and sellers
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
-  senderId: integer("sender_id").notNull().references(() => users.id),
-  receiverId: integer("receiver_id").notNull().references(() => users.id),
+  senderId: integer("from_user_id").notNull().references(() => users.id),
+  receiverId: integer("to_user_id").notNull().references(() => users.id),
   carId: integer("car_id").references(() => cars.id),
-  content: text("content").notNull(),
+  content: text("message").notNull(),
   isRead: boolean("is_read").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
