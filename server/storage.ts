@@ -360,13 +360,38 @@ export class DatabaseStorage implements IStorage {
 
   async getAllCars(): Promise<Car[]> {
     try {
-      // Use direct SQL to handle column name differences
-      const result = await db.execute(sql`
-        SELECT * FROM cars
-        ORDER BY created_at DESC
-      `);
+      // Use direct database connection from pool
+      const client = await pool.connect();
       
-      return result.rows as Car[];
+      try {
+        const result = await client.query('SELECT * FROM cars ORDER BY created_at DESC');
+        
+        // Map database column names to our schema properties
+        return result.rows.map(row => ({
+          id: row.id,
+          showroomId: row.showroom_id,
+          title: row.title,
+          make: row.make,
+          model: row.model,
+          year: row.year,
+          price: row.price,
+          mileage: row.mileage,
+          color: row.color,
+          vin: row.vin,
+          transmission: row.transmission,
+          fuelType: row.fuel_type,
+          category: row.category,
+          description: row.description,
+          features: row.features,
+          condition: row.condition,
+          images: row.images,
+          isFeatured: row.is_featured,
+          isSold: row.is_sold,
+          createdAt: row.created_at
+        })) as Car[];
+      } finally {
+        client.release();
+      }
     } catch (error) {
       console.error('Error getting all cars:', error);
       return [];
@@ -375,14 +400,41 @@ export class DatabaseStorage implements IStorage {
 
   async getCarsByShowroom(showroomId: number): Promise<Car[]> {
     try {
-      // Use direct SQL to handle column name differences
-      const result = await db.execute(sql`
-        SELECT * FROM cars
-        WHERE showroom_id = ${showroomId}
-        ORDER BY created_at DESC
-      `);
+      // Use direct database connection from pool
+      const client = await pool.connect();
       
-      return result.rows as Car[];
+      try {
+        const result = await client.query(
+          'SELECT * FROM cars WHERE showroom_id = $1 ORDER BY created_at DESC',
+          [showroomId]
+        );
+        
+        // Map database column names to our schema properties
+        return result.rows.map(row => ({
+          id: row.id,
+          showroomId: row.showroom_id,
+          title: row.title,
+          make: row.make,
+          model: row.model,
+          year: row.year,
+          price: row.price,
+          mileage: row.mileage,
+          color: row.color,
+          vin: row.vin,
+          transmission: row.transmission,
+          fuelType: row.fuel_type,
+          category: row.category,
+          description: row.description,
+          features: row.features,
+          condition: row.condition,
+          images: row.images,
+          isFeatured: row.is_featured,
+          isSold: row.is_sold,
+          createdAt: row.created_at
+        })) as Car[];
+      } finally {
+        client.release();
+      }
     } catch (error) {
       console.error('Error getting showroom cars:', error);
       return [];
@@ -391,14 +443,41 @@ export class DatabaseStorage implements IStorage {
 
   async getFeaturedCars(limit: number = 6): Promise<Car[]> {
     try {
-      // Use direct SQL since there's a schema mismatch between camelCase in code and snake_case in DB
-      const result = await db.execute(sql`
-        SELECT * FROM cars 
-        WHERE is_featured = true 
-        LIMIT ${limit}
-      `);
+      // Use direct database connection from pool
+      const client = await pool.connect();
       
-      return result.rows as Car[];
+      try {
+        const result = await client.query(
+          'SELECT * FROM cars WHERE is_featured = true LIMIT $1',
+          [limit]
+        );
+        
+        // Map database column names to our schema properties
+        return result.rows.map(row => ({
+          id: row.id,
+          showroomId: row.showroom_id,
+          title: row.title,
+          make: row.make,
+          model: row.model,
+          year: row.year,
+          price: row.price,
+          mileage: row.mileage,
+          color: row.color,
+          vin: row.vin,
+          transmission: row.transmission,
+          fuelType: row.fuel_type,
+          category: row.category,
+          description: row.description,
+          features: row.features,
+          condition: row.condition,
+          images: row.images,
+          isFeatured: row.is_featured,
+          isSold: row.is_sold,
+          createdAt: row.created_at
+        })) as Car[];
+      } finally {
+        client.release();
+      }
     } catch (error) {
       console.error('Error getting featured cars:', error);
       return [];
@@ -471,10 +550,14 @@ export class DatabaseStorage implements IStorage {
       }
       query += ' ORDER BY created_at DESC';
 
-      const result = await db.execute({
-        text: query, 
-        values: queryParams
-      });
+      // Use pool directly for raw query
+      const client = await pool.connect();
+      let result;
+      try {
+        result = await client.query(query, queryParams);
+      } finally {
+        client.release();
+      }
 
       return result.rows as Car[];
     } catch (error) {
