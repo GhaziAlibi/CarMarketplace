@@ -463,11 +463,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getMessagesByUser(userId: number): Promise<Message[]> {
-    return await db
-      .select()
-      .from(messages)
-      .where(or(eq(messages.senderId, userId), eq(messages.receiverId, userId)))
-      .orderBy(desc(messages.createdAt));
+    try {
+      // Use direct SQL to handle column name differences
+      const result = await db.execute(sql`
+        SELECT * FROM messages 
+        WHERE sender_id = ${userId} OR receiver_id = ${userId}
+        ORDER BY created_at DESC
+      `);
+      
+      return result.rows as Message[];
+    } catch (error) {
+      console.error('Error getting messages for user:', error);
+      return [];
+    }
   }
 
   async getConversation(user1Id: number, user2Id: number): Promise<Message[]> {

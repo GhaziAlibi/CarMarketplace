@@ -97,7 +97,8 @@ const SellerDashboard: React.FC = () => {
   ];
   
   // Format currency
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | null | undefined) => {
+    if (amount === null || amount === undefined) return 'N/A';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -106,8 +107,10 @@ const SellerDashboard: React.FC = () => {
   };
   
   // Format date
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | Date | null) => {
+    if (!dateString) return 'N/A';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid date';
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -398,12 +401,10 @@ const SellerDashboard: React.FC = () => {
                             <Badge
                               variant="outline"
                               className={`
-                                ${car.status === 'available' ? 'bg-green-50 text-green-700' : ''}
-                                ${car.status === 'sold' ? 'bg-red-50 text-red-700' : ''}
-                                ${car.status === 'pending' ? 'bg-amber-50 text-amber-700' : ''}
+                                ${car.is_sold ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}
                               `}
                             >
-                              {car.status.charAt(0).toUpperCase() + car.status.slice(1)}
+                              {car.is_sold ? 'Sold' : 'Available'}
                             </Badge>
                           </TableCell>
                           <TableCell>{formatDate(car.createdAt)}</TableCell>
