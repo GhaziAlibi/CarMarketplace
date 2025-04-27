@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,11 +33,12 @@ const AuthPage: React.FC = () => {
   const { user, loginMutation, registerMutation } = useAuth();
   const [tab, setTab] = useState("login");
   
-  // If user is already logged in, redirect to home
-  if (user) {
-    navigate("/");
-    return null;
-  }
+  // Use useEffect to handle redirection after render
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
   
   return (
     <div className="min-h-screen bg-gray-50 flex">
