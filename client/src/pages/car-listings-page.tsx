@@ -406,7 +406,7 @@ const CarListingsPage: React.FC = () => {
                             <SelectValue placeholder="All Categories" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">All Categories</SelectItem>
+                            <SelectItem value="all">All Categories</SelectItem>
                             <SelectItem value="Sedan">Sedan</SelectItem>
                             <SelectItem value="SUV">SUV</SelectItem>
                             <SelectItem value="Sports">Sports</SelectItem>
@@ -427,7 +427,7 @@ const CarListingsPage: React.FC = () => {
                             <SelectValue placeholder="Any Price" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Any Price</SelectItem>
+                            <SelectItem value="any">Any Price</SelectItem>
                             <SelectItem value="0-50000">Under $50,000</SelectItem>
                             <SelectItem value="50000-100000">$50,000 - $100,000</SelectItem>
                             <SelectItem value="100000-200000">$100,000 - $200,000</SelectItem>

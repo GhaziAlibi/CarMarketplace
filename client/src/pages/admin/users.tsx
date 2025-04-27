@@ -186,7 +186,7 @@ const AdminUsers: React.FC = () => {
                       <SelectValue placeholder="Filter by role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Roles</SelectItem>
+                      <SelectItem value="all">All Roles</SelectItem>
                       <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>
                       <SelectItem value={UserRole.SELLER}>Seller</SelectItem>
                       <SelectItem value={UserRole.BUYER}>Buyer</SelectItem>

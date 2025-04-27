@@ -278,7 +278,7 @@ const AdminListings: React.FC = () => {
                       <SelectValue placeholder="Filter by status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Statuses</SelectItem>
+                      <SelectItem value="all">All Statuses</SelectItem>
                       <SelectItem value="available">Available</SelectItem>
                       <SelectItem value="sold">Sold</SelectItem>
                       <SelectItem value="pending">Pending</SelectItem>
@@ -290,7 +290,7 @@ const AdminListings: React.FC = () => {
                       <SelectValue placeholder="Filter by category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Categories</SelectItem>
+                      <SelectItem value="all">All Categories</SelectItem>
                       <SelectItem value="Sedan">Sedan</SelectItem>
                       <SelectItem value="SUV">SUV</SelectItem>
                       <SelectItem value="Sports">Sports</SelectItem>
