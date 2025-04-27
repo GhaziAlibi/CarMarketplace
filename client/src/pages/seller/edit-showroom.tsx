@@ -121,7 +121,14 @@ const SellerEditShowroom: React.FC = () => {
 
   const onSubmit = (data: ShowroomFormValues) => {
     console.log("Form submitted with data:", data);
-    updateMutation.mutate(data);
+    
+    // Filter out undefined values
+    const cleanedData = Object.fromEntries(
+      Object.entries(data).filter(([_, value]) => value !== undefined && value !== "")
+    );
+    
+    console.log("Cleaned data for submission:", cleanedData);
+    updateMutation.mutate(cleanedData as ShowroomFormValues);
   };
 
   // If user is not a seller, redirect to home
@@ -239,7 +246,7 @@ const SellerEditShowroom: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <form onSubmit={(e) => { e.preventDefault(); }} className="space-y-6">
                       <Tabs value={activeTab}>
                         <TabsContent value="general" className="mt-0 space-y-6">
                           <FormField
@@ -440,7 +447,8 @@ const SellerEditShowroom: React.FC = () => {
                       
                       <div className="flex justify-end space-x-4 pt-4">
                         <Button 
-                          type="submit"
+                          type="button" 
+                          onClick={form.handleSubmit(onSubmit)}
                           disabled={updateMutation.isPending}
                           className="min-w-32"
                         >
