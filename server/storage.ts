@@ -69,32 +69,128 @@ export class DatabaseStorage implements IStorage {
 
   // User operations
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    try {
+      // Use direct SQL to avoid schema mismatches between code and database
+      const result = await db.execute(sql`
+        SELECT id, username, password, email, role, created_at 
+        FROM users 
+        WHERE id = ${id}
+      `);
+      
+      if (result.rows.length === 0) return undefined;
+      
+      // Map the result to match the expected User type with defaults for missing fields
+      const userData = result.rows[0];
+      return {
+        id: userData.id,
+        username: userData.username,
+        password: userData.password,
+        email: userData.email,
+        role: userData.role,
+        name: userData.username, // Use username as name since name column doesn't exist
+        phone: null,
+        avatar: null,
+        createdAt: userData.created_at
+      } as User;
+    } catch (error) {
+      console.error('Error in getUser:', error);
+      return undefined;
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.username, username));
-    return user;
+    try {
+      // Use direct SQL to avoid schema mismatches between code and database
+      const result = await db.execute(sql`
+        SELECT id, username, password, email, role, created_at 
+        FROM users 
+        WHERE username = ${username}
+      `);
+      
+      if (result.rows.length === 0) return undefined;
+      
+      // Map the result to match the expected User type with defaults for missing fields
+      const userData = result.rows[0];
+      return {
+        id: userData.id,
+        username: userData.username,
+        password: userData.password,
+        email: userData.email,
+        role: userData.role,
+        name: userData.username, // Use username as name since name column doesn't exist
+        phone: null,
+        avatar: null,
+        createdAt: userData.created_at
+      } as User;
+    } catch (error) {
+      console.error('Error in getUserByUsername:', error);
+      return undefined;
+    }
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email));
-    return user;
+    try {
+      // Use direct SQL to avoid schema mismatches between code and database
+      const result = await db.execute(sql`
+        SELECT id, username, password, email, role, created_at 
+        FROM users 
+        WHERE email = ${email}
+      `);
+      
+      if (result.rows.length === 0) return undefined;
+      
+      // Map the result to match the expected User type with defaults for missing fields
+      const userData = result.rows[0];
+      return {
+        id: userData.id,
+        username: userData.username,
+        password: userData.password,
+        email: userData.email,
+        role: userData.role,
+        name: userData.username, // Use username as name since name column doesn't exist
+        phone: null,
+        avatar: null,
+        createdAt: userData.created_at
+      } as User;
+    } catch (error) {
+      console.error('Error in getUserByEmail:', error);
+      return undefined;
+    }
   }
 
   async createUser(userData: InsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .returning();
-    return user;
+    try {
+      // Remove fields that don't exist in the actual database table
+      const { name, phone, avatar, ...validUserData } = userData;
+      
+      // Use direct SQL to ensure only valid fields are inserted
+      const result = await db.execute(sql`
+        INSERT INTO users (username, password, email, role)
+        VALUES (${validUserData.username}, ${validUserData.password}, ${validUserData.email}, ${validUserData.role || 'buyer'})
+        RETURNING id, username, password, email, role, created_at
+      `);
+      
+      if (result.rows.length === 0) {
+        throw new Error('Failed to create user');
+      }
+      
+      // Map the result to match the expected User type with defaults for missing fields
+      const createdUser = result.rows[0];
+      return {
+        id: createdUser.id,
+        username: createdUser.username,
+        password: createdUser.password,
+        email: createdUser.email,
+        role: createdUser.role,
+        name: createdUser.username, // Use username as name
+        phone: null,
+        avatar: null,
+        createdAt: createdUser.created_at
+      } as User;
+    } catch (error) {
+      console.error('Error in createUser:', error);
+      throw error;
+    }
   }
 
   async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
