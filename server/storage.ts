@@ -3,7 +3,7 @@ import session from "express-session";
 import createMemoryStore from "memorystore";
 import connectPg from "connect-pg-simple";
 import { db, pool } from "./db";
-import { eq, and, or, desc, gte, lte, like, asc } from "drizzle-orm";
+import { eq, and, or, desc, gte, lte, like, asc, sql } from "drizzle-orm";
 
 // For SessionStore type
 import { Store } from "express-session";
@@ -223,11 +223,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFeaturedCars(limit: number = 6): Promise<Car[]> {
-    return await db
-      .select()
-      .from(cars)
-      .where(eq(cars.isFeatured, true))
-      .limit(limit);
+    try {
+      // Use direct SQL since there's a schema mismatch between camelCase in code and snake_case in DB
+      const result = await db.execute(sql`
+        SELECT * FROM cars 
+        WHERE is_featured = true 
+        LIMIT ${limit}
+      `);
+      
+      return result.rows as Car[];
+    } catch (error) {
+      console.error('Error getting featured cars:', error);
+      return [];
+    }
   }
 
   async searchCars(params: CarSearchParams): Promise<Car[]> {
