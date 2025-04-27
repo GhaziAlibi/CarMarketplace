@@ -122,11 +122,9 @@ const HomePage: React.FC = () => {
               
               <div className="mt-12 text-center">
                 <Button asChild size="lg">
-                  <Link href="/cars">
-                    <a className="inline-flex items-center">
-                      View All Listings
-                      <ChevronRight className="ml-2 -mr-1 w-5 h-5" />
-                    </a>
+                  <Link href="/cars" className="inline-flex items-center">
+                    View All Listings
+                    <ChevronRight className="ml-2 -mr-1 w-5 h-5" />
                   </Link>
                 </Button>
               </div>
@@ -183,11 +181,9 @@ const HomePage: React.FC = () => {
               
               <div className="mt-12 text-center">
                 <Button asChild variant="outline" size="lg">
-                  <Link href="/showrooms">
-                    <a className="inline-flex items-center">
-                      View All Showrooms
-                      <ChevronRight className="ml-2 -mr-1 w-5 h-5" />
-                    </a>
+                  <Link href="/showrooms" className="inline-flex items-center">
+                    View All Showrooms
+                    <ChevronRight className="ml-2 -mr-1 w-5 h-5" />
                   </Link>
                 </Button>
               </div>

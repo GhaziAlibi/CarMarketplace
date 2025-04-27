@@ -110,14 +110,14 @@ const Header: React.FC = () => {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-8">
             {navLinks.map((link) => (
-              <Link key={link.path} href={link.path}>
-                <a
-                  className={`px-3 py-2 text-sm font-medium hover:text-primary transition-colors ${
-                    link.active ? "text-primary" : "text-muted-foreground"
-                  }`}
-                >
-                  {link.title}
-                </a>
+              <Link 
+                key={link.path} 
+                href={link.path}
+                className={`px-3 py-2 text-sm font-medium hover:text-primary transition-colors ${
+                  link.active ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                {link.title}
               </Link>
             ))}
           </nav>
@@ -190,14 +190,13 @@ const Header: React.FC = () => {
                   <div className="flex flex-col space-y-4 mt-6">
                     {navLinks.map((link) => (
                       <SheetClose key={link.path} asChild>
-                        <Link href={link.path}>
-                          <a
-                            className={`px-3 py-2 text-base font-medium hover:text-primary transition-colors ${
-                              link.active ? "text-primary" : "text-muted-foreground"
-                            }`}
-                          >
-                            {link.title}
-                          </a>
+                        <Link 
+                          href={link.path}
+                          className={`px-3 py-2 text-base font-medium hover:text-primary transition-colors ${
+                            link.active ? "text-primary" : "text-muted-foreground"
+                          }`}
+                        >
+                          {link.title}
                         </Link>
                       </SheetClose>
                     ))}
@@ -216,25 +215,37 @@ const Header: React.FC = () => {
                         
                         <SheetClose asChild>
                           {user.role === UserRole.ADMIN && (
-                            <Link href="/admin/dashboard">
-                              <a className="px-3 py-2 text-base font-medium">Admin Dashboard</a>
+                            <Link 
+                              href="/admin/dashboard"
+                              className="px-3 py-2 text-base font-medium"
+                            >
+                              Admin Dashboard
                             </Link>
                           )}
                           {user.role === UserRole.SELLER && (
-                            <Link href="/seller/dashboard">
-                              <a className="px-3 py-2 text-base font-medium">Seller Dashboard</a>
+                            <Link 
+                              href="/seller/dashboard"
+                              className="px-3 py-2 text-base font-medium"
+                            >
+                              Seller Dashboard
                             </Link>
                           )}
                           {user.role === UserRole.BUYER && (
-                            <Link href="/saved-cars">
-                              <a className="px-3 py-2 text-base font-medium">Saved Cars</a>
+                            <Link 
+                              href="/saved-cars"
+                              className="px-3 py-2 text-base font-medium"
+                            >
+                              Saved Cars
                             </Link>
                           )}
                         </SheetClose>
                         
                         <SheetClose asChild>
-                          <Link href="/messages">
-                            <a className="px-3 py-2 text-base font-medium">Messages</a>
+                          <Link 
+                            href="/messages"
+                            className="px-3 py-2 text-base font-medium"
+                          >
+                            Messages
                           </Link>
                         </SheetClose>
                         
