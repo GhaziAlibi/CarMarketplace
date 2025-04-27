@@ -1,9 +1,15 @@
 import { users, type User, type InsertUser, UserRole, cars, type Car, type InsertCar, showrooms, type Showroom, type InsertShowroom, messages, type Message, type InsertMessage, favorites, type Favorite, type InsertFavorite, CarSearchParams } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
-import { nanoid } from "nanoid";
+import connectPg from "connect-pg-simple";
+import { db, pool } from "./db";
+import { eq, and, or, desc, gte, lte, like, asc } from "drizzle-orm";
+
+// For SessionStore type
+import { Store } from "express-session";
 
 const MemoryStore = createMemoryStore(session);
+const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
   // User operations
@@ -47,9 +53,319 @@ export interface IStorage {
   isFavorite(userId: number, carId: number): Promise<boolean>;
   
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: Store;
 }
 
+export class DatabaseStorage implements IStorage {
+  sessionStore: Store;
+
+  constructor() {
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true
+    });
+  }
+
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, username));
+    return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(userData: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .returning();
+    return user;
+  }
+
+  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set(userData)
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
+  async getUsersByRole(role: UserRole): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .where(eq(users.role, role));
+  }
+
+  // Showroom operations
+  async getShowroom(id: number): Promise<Showroom | undefined> {
+    const [showroom] = await db
+      .select()
+      .from(showrooms)
+      .where(eq(showrooms.id, id));
+    return showroom;
+  }
+
+  async getShowroomByUserId(userId: number): Promise<Showroom | undefined> {
+    const [showroom] = await db
+      .select()
+      .from(showrooms)
+      .where(eq(showrooms.userId, userId));
+    return showroom;
+  }
+
+  async createShowroom(showroomData: InsertShowroom, userId: number): Promise<Showroom> {
+    const [showroom] = await db
+      .insert(showrooms)
+      .values({
+        ...showroomData,
+        userId,
+        rating: 0,
+        reviewCount: 0
+      })
+      .returning();
+    return showroom;
+  }
+
+  async updateShowroom(id: number, showroomData: Partial<Showroom>): Promise<Showroom | undefined> {
+    const [showroom] = await db
+      .update(showrooms)
+      .set(showroomData)
+      .where(eq(showrooms.id, id))
+      .returning();
+    return showroom;
+  }
+
+  async getAllShowrooms(): Promise<Showroom[]> {
+    return await db.select().from(showrooms);
+  }
+
+  // Car operations
+  async getCar(id: number): Promise<Car | undefined> {
+    const [car] = await db
+      .select()
+      .from(cars)
+      .where(eq(cars.id, id));
+    return car;
+  }
+
+  async createCar(carData: InsertCar): Promise<Car> {
+    // Create placeholder images if none provided
+    if (!carData.images || !carData.images.length) {
+      // Get next ID to use in placeholder images
+      const result = await db.select({ maxId: cars.id }).from(cars).orderBy(desc(cars.id)).limit(1);
+      const nextId = result.length > 0 ? result[0].maxId + 1 : 1;
+      
+      carData.images = [
+        `https://placehold.co/600x400?text=Car+${nextId}`,
+        `https://placehold.co/600x400?text=Interior+${nextId}`
+      ];
+    }
+    
+    const [car] = await db
+      .insert(cars)
+      .values({
+        ...carData,
+        isFeatured: false
+      })
+      .returning();
+    return car;
+  }
+
+  async updateCar(id: number, carData: Partial<Car>): Promise<Car | undefined> {
+    const [car] = await db
+      .update(cars)
+      .set(carData)
+      .where(eq(cars.id, id))
+      .returning();
+    return car;
+  }
+
+  async deleteCar(id: number): Promise<boolean> {
+    const result = await db
+      .delete(cars)
+      .where(eq(cars.id, id));
+    return result.count > 0;
+  }
+
+  async getAllCars(): Promise<Car[]> {
+    return await db.select().from(cars);
+  }
+
+  async getCarsByShowroom(showroomId: number): Promise<Car[]> {
+    return await db
+      .select()
+      .from(cars)
+      .where(eq(cars.showroomId, showroomId));
+  }
+
+  async getFeaturedCars(limit: number = 6): Promise<Car[]> {
+    return await db
+      .select()
+      .from(cars)
+      .where(eq(cars.isFeatured, true))
+      .limit(limit);
+  }
+
+  async searchCars(params: CarSearchParams): Promise<Car[]> {
+    // Start with a base query
+    let baseQuery = db.select().from(cars);
+    let conditions = [];
+    
+    if (params.make) {
+      conditions.push(like(cars.make, `%${params.make}%`));
+    }
+    
+    if (params.model) {
+      conditions.push(like(cars.model, `%${params.model}%`));
+    }
+    
+    if (params.category) {
+      conditions.push(eq(cars.category, params.category));
+    }
+    
+    if (params.year) {
+      conditions.push(eq(cars.year, params.year));
+    }
+    
+    if (params.transmission) {
+      conditions.push(eq(cars.transmission, params.transmission));
+    }
+    
+    if (params.fuelType) {
+      conditions.push(eq(cars.fuelType, params.fuelType));
+    }
+    
+    if (params.priceRange) {
+      const [min, max] = params.priceRange.split('-').map(Number);
+      if (min && !max) {
+        conditions.push(gte(cars.price, min));
+      } else if (!min && max) {
+        conditions.push(lte(cars.price, max));
+      } else if (min && max) {
+        conditions.push(and(gte(cars.price, min), lte(cars.price, max)));
+      }
+    }
+    
+    // Apply all conditions if there are any
+    if (conditions.length > 0) {
+      return await baseQuery.where(and(...conditions));
+    }
+    
+    return await baseQuery;
+  }
+
+  // Message operations
+  async getMessage(id: number): Promise<Message | undefined> {
+    const [message] = await db
+      .select()
+      .from(messages)
+      .where(eq(messages.id, id));
+    return message;
+  }
+
+  async createMessage(messageData: InsertMessage): Promise<Message> {
+    const [message] = await db
+      .insert(messages)
+      .values({
+        ...messageData,
+        isRead: false
+      })
+      .returning();
+    return message;
+  }
+
+  async updateMessage(id: number, messageData: Partial<Message>): Promise<Message | undefined> {
+    const [message] = await db
+      .update(messages)
+      .set(messageData)
+      .where(eq(messages.id, id))
+      .returning();
+    return message;
+  }
+
+  async getMessagesByUser(userId: number): Promise<Message[]> {
+    return await db
+      .select()
+      .from(messages)
+      .where(or(eq(messages.senderId, userId), eq(messages.receiverId, userId)))
+      .orderBy(desc(messages.createdAt));
+  }
+
+  async getConversation(user1Id: number, user2Id: number): Promise<Message[]> {
+    return await db
+      .select()
+      .from(messages)
+      .where(
+        or(
+          and(eq(messages.senderId, user1Id), eq(messages.receiverId, user2Id)),
+          and(eq(messages.senderId, user2Id), eq(messages.receiverId, user1Id))
+        )
+      )
+      .orderBy(asc(messages.createdAt));
+  }
+
+  // Favorite operations
+  async getFavorite(id: number): Promise<Favorite | undefined> {
+    const [favorite] = await db
+      .select()
+      .from(favorites)
+      .where(eq(favorites.id, id));
+    return favorite;
+  }
+
+  async createFavorite(favoriteData: InsertFavorite): Promise<Favorite> {
+    const [favorite] = await db
+      .insert(favorites)
+      .values(favoriteData)
+      .returning();
+    return favorite;
+  }
+
+  async deleteFavorite(id: number): Promise<boolean> {
+    const result = await db
+      .delete(favorites)
+      .where(eq(favorites.id, id));
+    return result.count > 0;
+  }
+
+  async getFavoritesByUser(userId: number): Promise<Favorite[]> {
+    return await db
+      .select()
+      .from(favorites)
+      .where(eq(favorites.userId, userId));
+  }
+
+  async isFavorite(userId: number, carId: number): Promise<boolean> {
+    const [favorite] = await db
+      .select()
+      .from(favorites)
+      .where(and(eq(favorites.userId, userId), eq(favorites.carId, carId)))
+      .limit(1);
+    return !!favorite;
+  }
+}
+
+// For in-memory storage when needed
 export class MemStorage implements IStorage {
   private usersMap: Map<number, User>;
   private showroomsMap: Map<number, Showroom>;
@@ -57,7 +373,7 @@ export class MemStorage implements IStorage {
   private messagesMap: Map<number, Message>;
   private favoritesMap: Map<number, Favorite>;
   
-  sessionStore: session.SessionStore;
+  sessionStore: Store;
   currentUserId: number;
   currentShowroomId: number;
   currentCarId: number;
