@@ -177,6 +177,7 @@ const CarDetailsPage: React.FC = () => {
       if (!showroom?.userId) throw new Error("Could not find seller information");
       
       await apiRequest("POST", "/api/messages", {
+        senderId: user.id,
         receiverId: showroom.userId,
         carId,
         content: data.content
