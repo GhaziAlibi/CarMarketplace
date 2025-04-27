@@ -223,7 +223,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/cars/:id", async (req, res) => {
     try {
+      // Validate ID is a number
       const carId = parseInt(req.params.id);
+      if (isNaN(carId)) {
+        return res.status(400).json({ error: "Invalid car ID format" });
+      }
+      
+      // Get car with proper error handling
       const car = await storage.getCar(carId);
       
       if (!car) {
@@ -232,6 +238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(car);
     } catch (error) {
+      console.error('Error in GET /api/cars/:id route:', error);
       res.status(500).json({ error: "Failed to get car" });
     }
   });

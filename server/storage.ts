@@ -258,11 +258,57 @@ export class DatabaseStorage implements IStorage {
 
   // Car operations
   async getCar(id: number): Promise<Car | undefined> {
-    const [car] = await db
-      .select()
-      .from(cars)
-      .where(eq(cars.id, id));
-    return car;
+    try {
+      // Get the car ID as a number
+      const carId = Number(id);
+      
+      if (isNaN(carId)) {
+        console.error('Invalid car ID:', id);
+        return undefined;
+      }
+      
+      // Get direct database connection from pool to execute raw query
+      const client = await pool.connect();
+      
+      try {
+        const result = await client.query('SELECT * FROM cars WHERE id = $1', [carId]);
+        
+        if (result.rows.length === 0) {
+          return undefined;
+        }
+        
+        // Map database column names to the camelCase properties expected by the application
+        const car = {
+          id: result.rows[0].id,
+          showroomId: result.rows[0].showroom_id,
+          title: result.rows[0].title,
+          make: result.rows[0].make,
+          model: result.rows[0].model,
+          year: result.rows[0].year,
+          price: result.rows[0].price,
+          mileage: result.rows[0].mileage,
+          color: result.rows[0].color,
+          vin: result.rows[0].vin,
+          transmission: result.rows[0].transmission,
+          fuelType: result.rows[0].fuel_type,
+          category: result.rows[0].category,
+          description: result.rows[0].description,
+          features: result.rows[0].features,
+          condition: result.rows[0].condition,
+          images: result.rows[0].images,
+          isFeatured: result.rows[0].is_featured,
+          isSold: result.rows[0].is_sold,
+          createdAt: result.rows[0].created_at
+        };
+        
+        return car as Car;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error('Error getting car by ID:', error);
+      return undefined;
+    }
   }
 
   async createCar(carData: InsertCar): Promise<Car> {
@@ -283,9 +329,13 @@ export class DatabaseStorage implements IStorage {
       .insert(cars)
       .values({
         ...carData,
-        status: carData.status || "available",
         description: carData.description || null,
-        isFeatured: false
+        isFeatured: false,
+        isSold: false,
+        color: carData.color || null,
+        vin: carData.vin || null,
+        condition: carData.condition || null,
+        category: carData.category || null
       })
       .returning();
     return car;
