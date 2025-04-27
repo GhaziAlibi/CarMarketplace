@@ -20,6 +20,7 @@ import AdminUsers from "@/pages/admin/users";
 import SellerDashboard from "@/pages/seller/dashboard";
 import SellerAddListing from "@/pages/seller/add-listing";
 import SellerMessages from "@/pages/seller/messages";
+import SellerEditShowroom from "@/pages/seller/edit-showroom";
 import BuyerSavedCars from "@/pages/buyer/saved-cars";
 import BuyerMessages from "@/pages/buyer/messages";
 import { UserRole } from "@shared/schema";
@@ -44,6 +45,7 @@ function Router() {
       <ProtectedRoute path="/seller/dashboard" component={SellerDashboard} roles={[UserRole.SELLER]} />
       <ProtectedRoute path="/seller/add-listing" component={SellerAddListing} roles={[UserRole.SELLER]} />
       <ProtectedRoute path="/seller/messages" component={SellerMessages} roles={[UserRole.SELLER]} />
+      <ProtectedRoute path="/seller/edit-showroom" component={SellerEditShowroom} roles={[UserRole.SELLER]} />
       
       {/* Admin Routes */}
       <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} roles={[UserRole.ADMIN]} />

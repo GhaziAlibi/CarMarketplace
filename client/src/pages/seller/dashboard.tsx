@@ -194,10 +194,10 @@ const SellerDashboard: React.FC = () => {
                         </Link>
                       </Button>
                       <Button variant="outline" size="sm" asChild>
-                        <span className="cursor-not-allowed opacity-70">
+                        <Link href="/seller/edit-showroom">
                           <Settings className="h-4 w-4 mr-2" />
-                          Edit Profile
-                        </span>
+                          Edit Showroom
+                        </Link>
                       </Button>
                     </div>
                   </div>

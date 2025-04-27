@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import CarListingCard from "@/components/car-listing-card";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -44,6 +45,7 @@ const ShowroomDetailsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [activeTab, setActiveTab] = useState("cars");
+  const { user } = useAuth();
   
   // Fetch showroom details
   const { 
@@ -184,8 +186,8 @@ const ShowroomDetailsPage: React.FC = () => {
           <div className="absolute inset-0">
             <img
               className="w-full h-64 object-cover"
-              src="https://images.unsplash.com/photo-1577495508326-19a1b3cf65b9?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80"
-              alt="Car showroom"
+              src={showroom.headerImage || "https://images.unsplash.com/photo-1577495508326-19a1b3cf65b9?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80"}
+              alt={`${showroom.name} header`}
             />
             <div className="absolute inset-0 bg-gradient-to-r from-secondary-dark to-transparent opacity-80"></div>
           </div>
