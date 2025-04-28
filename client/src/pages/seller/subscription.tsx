@@ -31,6 +31,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import PaymentForm from "@/components/payment-form";
+import SellerLayout from "@/components/layout/seller-layout";
 
 // Initialize Stripe
 const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
@@ -162,34 +163,33 @@ export default function SellerSubscription() {
 
   if (isLoadingSubscription) {
     return (
-      <div className="flex justify-center items-center h-96">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2">Loading subscription details...</span>
-      </div>
+      <SellerLayout title="Subscription Management" description="Loading subscription details...">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      </SellerLayout>
     );
   }
 
   if (subscriptionError) {
     return (
-      <div className="flex flex-col justify-center items-center h-96">
-        <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
-        <h2 className="text-xl font-semibold">Error Loading Subscription</h2>
-        <p className="text-muted-foreground mt-2">
-          We couldn't load your subscription details. Please try again later.
-        </p>
-      </div>
+      <SellerLayout title="Subscription Management" description="Error loading subscription details">
+        <div className="flex flex-col justify-center items-center h-64">
+          <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+          <h2 className="text-xl font-semibold">Error Loading Subscription</h2>
+          <p className="text-muted-foreground mt-2">
+            We couldn't load your subscription details. Please try again later.
+          </p>
+        </div>
+      </SellerLayout>
     );
   }
 
   return (
-    <div className="container py-8 max-w-6xl">
-      <div className="mb-8 text-center">
-        <h1 className="text-4xl font-bold mb-2">Subscription Management</h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Choose the right plan to grow your car dealership business on AutoMarket
-        </p>
-      </div>
-      
+    <SellerLayout 
+      title="Subscription Management" 
+      description="Choose the right plan to grow your car dealership business on AutoMarket"
+    >
       {/* Current Usage Section */}
       <div className="mb-10">
         <Card className="border-0 shadow-sm bg-gradient-to-br from-primary/5 to-secondary/5">
@@ -425,6 +425,6 @@ export default function SellerSubscription() {
           </Card>
         </div>
       )}
-    </div>
+    </SellerLayout>
   );
 }
