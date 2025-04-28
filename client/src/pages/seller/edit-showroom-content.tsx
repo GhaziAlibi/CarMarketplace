@@ -52,6 +52,8 @@ import { Label } from "@/components/ui/label";
 
 interface EditShowroomContentProps {
   showroom: any;
+  isLoading?: boolean;
+  isError?: boolean;
 }
 
 // Extended schema for the form

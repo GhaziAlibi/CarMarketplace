@@ -22,6 +22,7 @@ const SellerDashboard: React.FC = () => {
   const {
     data: showroom,
     isLoading: isLoadingShowroom,
+    isError: isShowroomError,
   } = useQuery({
     queryKey: [`/api/showrooms/user/${user?.id}`],
     enabled: !!user,
@@ -89,7 +90,11 @@ const SellerDashboard: React.FC = () => {
         };
       case "/seller/edit-showroom":
         return {
-          component: <EditShowroomContent showroom={showroom} />,
+          component: <EditShowroomContent 
+            showroom={showroom} 
+            isLoading={isLoadingShowroom} 
+            isError={isShowroomError}
+          />,
           title: t("seller.showroom"),
           description: t("seller.showroomDesc"),
         };
