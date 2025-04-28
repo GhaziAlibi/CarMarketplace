@@ -113,22 +113,29 @@ const EditShowroomContent: React.FC<EditShowroomContentProps> = ({ showroom }) =
         images: coverPreviews,
       };
       
-      const res = await apiRequest('PATCH', `/api/showrooms/${showroom.id}`, showroomData);
-      return res.json();
+      if (showroom?.id) {
+        // Update existing showroom
+        const res = await apiRequest('PATCH', `/api/showrooms/${showroom.id}`, showroomData);
+        return res.json();
+      } else {
+        // Create new showroom
+        const res = await apiRequest('POST', `/api/showrooms`, showroomData);
+        return res.json();
+      }
     },
     onSuccess: () => {
       // Refetch showroom data
       queryClient.invalidateQueries({ queryKey: [`/api/showrooms/user/${user?.id}`] });
       
       toast({
-        title: "Showroom updated successfully",
-        description: "Your showroom information has been updated",
+        title: showroom?.id ? "Showroom updated successfully" : "Showroom created successfully",
+        description: showroom?.id ? "Your showroom information has been updated" : "Your new showroom has been created",
         variant: "default",
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Error updating showroom",
+        title: showroom?.id ? "Error updating showroom" : "Error creating showroom",
         description: error.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
@@ -170,7 +177,10 @@ const EditShowroomContent: React.FC<EditShowroomContentProps> = ({ showroom }) =
     updateShowroomMutation.mutate(values);
   };
 
-  if (!showroom) {
+  // Determine if we're in create mode (no showroom) or edit mode (existing showroom)
+  const [createMode, setCreateMode] = useState<boolean>(!showroom);
+  
+  if (!showroom && !createMode) {
     return (
       <Card>
         <CardHeader>
@@ -180,7 +190,7 @@ const EditShowroomContent: React.FC<EditShowroomContentProps> = ({ showroom }) =
         <CardContent className="text-center py-10">
           <Store className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <p className="mb-4">You don't have a showroom yet. Create one to start listing vehicles.</p>
-          <Button>Create Showroom</Button>
+          <Button onClick={() => setCreateMode(true)}>Create Showroom</Button>
         </CardContent>
       </Card>
     );
@@ -191,10 +201,12 @@ const EditShowroomContent: React.FC<EditShowroomContentProps> = ({ showroom }) =
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Store className="h-5 w-5" />
-          Edit Showroom
+          {showroom ? "Edit Showroom" : "Create New Showroom"}
         </CardTitle>
         <CardDescription>
-          Update your showroom profile and business information
+          {showroom 
+            ? "Update your showroom profile and business information" 
+            : "Fill in your showroom details to start listing vehicles"}
         </CardDescription>
       </CardHeader>
       
@@ -575,8 +587,12 @@ const EditShowroomContent: React.FC<EditShowroomContentProps> = ({ showroom }) =
                   type="button"
                   variant="outline"
                   onClick={() => {
-                    window.history.pushState(null, '', '/seller/dashboard');
-                    window.dispatchEvent(new PopStateEvent('popstate'));
+                    if (!showroom && createMode) {
+                      setCreateMode(false);
+                    } else {
+                      window.history.pushState(null, '', '/seller/dashboard');
+                      window.dispatchEvent(new PopStateEvent('popstate'));
+                    }
                   }}
                 >
                   Cancel
@@ -589,8 +605,17 @@ const EditShowroomContent: React.FC<EditShowroomContentProps> = ({ showroom }) =
                   {updateShowroomMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Changes
+                  {showroom ? (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Save Changes
+                    </>
+                  ) : (
+                    <>
+                      <Store className="mr-2 h-4 w-4" />
+                      Create Showroom
+                    </>
+                  )}
                 </Button>
               </CardFooter>
             </form>
