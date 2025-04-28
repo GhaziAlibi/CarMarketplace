@@ -27,12 +27,36 @@ const SellerDashboard: React.FC = () => {
     enabled: !!user,
   });
 
+  // Fetch cars if showroom exists
+  const { 
+    data: cars, 
+    isLoading: isLoadingCars 
+  } = useQuery({
+    queryKey: ['/api/cars'],
+    enabled: !!showroom,
+  });
+
+  // Fetch messages for seller
+  const { 
+    data: messages, 
+    isLoading: isLoadingMessages 
+  } = useQuery({
+    queryKey: ['/api/messages'],
+    enabled: !!user,
+  });
+
   // Get the component and title based on the current route
   const getContent = () => {
     switch (location) {
       case "/seller/dashboard":
         return {
-          component: <DashboardContent />,
+          component: <DashboardContent 
+            showroom={showroom} 
+            cars={cars} 
+            messages={messages} 
+            isLoadingCars={isLoadingCars} 
+            isLoadingMessages={isLoadingMessages} 
+          />,
           title: t("seller.dashboard"),
           description: t("seller.dashboardDesc"),
         };

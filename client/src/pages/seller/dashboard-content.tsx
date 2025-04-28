@@ -50,7 +50,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   isLoadingMessages
 }) => {
   // Filter unread messages
-  const unreadMessages = messages.filter((msg: any) => !msg.isRead && msg.receiverId === showroom?.userId);
+  const unreadMessages = messages?.filter((msg: any) => !msg.isRead && msg.receiverId === showroom?.userId) || [];
   
   // Sample data for charts (would be real data in a production app)
   const viewsData = [
@@ -114,7 +114,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
                   <div className="flex items-center mt-2 space-x-4">
                     <div className="flex items-center">
                       <Car className="h-4 w-4 text-primary mr-1" />
-                      <span>{cars.length} Listings</span>
+                      <span>{cars?.length || 0} Listings</span>
                     </div>
                     <div className="flex items-center">
                       <MessageSquare className="h-4 w-4 text-primary mr-1" />
@@ -152,7 +152,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm font-medium text-muted-foreground mb-1">Active Listings</p>
-                <p className="text-2xl font-bold">{cars.length}</p>
+                <p className="text-2xl font-bold">{cars?.length || 0}</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-500">
                 <Car className="h-6 w-6" />
@@ -244,7 +244,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
               <div className="flex justify-center py-10">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
-            ) : messages.length > 0 ? (
+            ) : messages?.length > 0 ? (
               <div className="space-y-4">
                 {messages.slice(0, 5).map((message: any) => (
                   <div key={message.id} className="flex items-start gap-3">
@@ -309,7 +309,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           </Button>
         </CardHeader>
         <CardContent className="p-0">
-          {cars.length > 0 ? (
+          {cars?.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
