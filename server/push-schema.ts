@@ -104,6 +104,23 @@ const createTables = async () => {
       );
     `);
     
+    // Create subscriptions table
+    console.log('Creating subscriptions table...');
+    await db.execute(sql`
+      CREATE TABLE subscriptions (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        tier TEXT NOT NULL,
+        status TEXT NOT NULL,
+        stripe_customer_id TEXT,
+        stripe_subscription_id TEXT,
+        listing_limit INTEGER NOT NULL,
+        start_date TIMESTAMP WITH TIME ZONE NOT NULL,
+        end_date TIMESTAMP WITH TIME ZONE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    
     // Seed users
     console.log('Seeding users...');
     const adminPassword = await hashPassword('admin123');
@@ -175,6 +192,38 @@ const createTables = async () => {
     const showrooms = showroomsResult.rows;
     const premiumMotorsId = showrooms.find((showroom: any) => showroom.name === 'Premium Motors')?.id;
     
+    // Seed subscriptions
+    console.log('Seeding subscriptions...');
+    await db.execute(sql`
+      INSERT INTO subscriptions (
+        user_id, tier, status, stripe_customer_id, stripe_subscription_id,
+        listing_limit, start_date, end_date, created_at
+      )
+      VALUES 
+        (
+          ${sellerId},
+          'FREE',
+          'active',
+          null,
+          null,
+          3,
+          NOW(),
+          null,
+          NOW()
+        ),
+        (
+          ${adminId},
+          'PREMIUM',
+          'active',
+          null,
+          null,
+          99999,  -- virtually unlimited
+          NOW(),
+          null,
+          NOW()
+        )
+    `);
+
     // Seed cars
     console.log('Seeding cars...');
     await db.execute(sql`
