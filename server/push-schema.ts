@@ -12,6 +12,7 @@ const createTables = async () => {
       DROP TABLE IF EXISTS favorites;
       DROP TABLE IF EXISTS messages;
       DROP TABLE IF EXISTS cars;
+      DROP TABLE IF EXISTS subscriptions;
       DROP TABLE IF EXISTS showrooms;
       DROP TABLE IF EXISTS users;
     `);
