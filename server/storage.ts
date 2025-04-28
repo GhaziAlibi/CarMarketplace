@@ -746,7 +746,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await db.execute(sql`
         SELECT * FROM subscriptions 
-        WHERE user_id = ${userId} AND active = true
+        WHERE user_id = ${userId} AND status = 'active'
         ORDER BY created_at DESC
         LIMIT 1
       `);
@@ -782,12 +782,14 @@ export class DatabaseStorage implements IStorage {
       
       const result = await db.execute(sql`
         INSERT INTO subscriptions 
-        (user_id, tier, stripe_customer_id, stripe_subscription_id, active)
+        (user_id, tier, stripe_customer_id, stripe_subscription_id, status, listing_limit, start_date)
         VALUES 
         (${subscriptionData.userId}, ${subscriptionData.tier}, 
          ${subscriptionData.stripeCustomerId || null}, 
          ${subscriptionData.stripeSubscriptionId || null}, 
-         ${subscriptionData.active !== false})
+         ${subscriptionData.active !== false ? 'active' : 'inactive'},
+         ${subscriptionData.tier === 'FREE' ? 3 : 99999},
+         NOW())
         RETURNING *
       `);
       
@@ -843,8 +845,8 @@ export class DatabaseStorage implements IStorage {
       }
       
       if (subscriptionData.active !== undefined) {
-        setValues.push(`active = $${paramCounter++}`);
-        params.push(subscriptionData.active);
+        setValues.push(`status = $${paramCounter++}`);
+        params.push(subscriptionData.active ? 'active' : 'inactive');
       }
       
       // Add updated_at to always update the timestamp
@@ -890,7 +892,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await db.execute(sql`
         UPDATE subscriptions
-        SET active = false, end_date = NOW(), updated_at = NOW()
+        SET status = 'inactive', end_date = NOW(), updated_at = NOW()
         WHERE id = ${id}
         RETURNING id
       `);
