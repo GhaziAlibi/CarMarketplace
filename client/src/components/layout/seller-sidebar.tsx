@@ -30,24 +30,26 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
   badge 
 }) => {
   return (
-    <Link href={href}>
-      <a
-        className={cn(
-          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
-          isActive
-            ? "bg-primary text-primary-foreground"
-            : "hover:bg-muted text-muted-foreground hover:text-foreground"
-        )}
-      >
-        {icon}
-        <span>{children}</span>
-        {badge !== undefined && badge > 0 && (
-          <Badge variant="secondary" className="ml-auto">
-            {badge}
-          </Badge>
-        )}
-      </a>
-    </Link>
+    <div
+      className={cn(
+        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all cursor-pointer",
+        isActive
+          ? "bg-primary text-primary-foreground"
+          : "hover:bg-muted text-muted-foreground hover:text-foreground"
+      )}
+      onClick={() => {
+        window.history.pushState(null, '', href);
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      }}
+    >
+      {icon}
+      <span>{children}</span>
+      {badge !== undefined && badge > 0 && (
+        <Badge variant="secondary" className="ml-auto">
+          {badge}
+        </Badge>
+      )}
+    </div>
   );
 };
 
