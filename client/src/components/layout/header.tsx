@@ -127,12 +127,17 @@ const Header: React.FC = () => {
 
           {/* Right section */}
           <div className="flex items-center space-x-4">
+            {/* Language Switcher */}
+            <div className="hidden md:block">
+              <LanguageSwitcher />
+            </div>
+            
             {/* Sell Your Car button - show only for sellers and if logged in */}
             {user && user.role === UserRole.SELLER && (
               <div className="hidden md:block">
                 <Button asChild variant="default" size="sm">
                   <Link href="/seller/add-listing">
-                    <Car className="mr-2 h-4 w-4" /> Add Listing
+                    <Car className="mr-2 h-4 w-4" /> {t("seller.addListing")}
                   </Link>
                 </Button>
               </div>
@@ -163,13 +168,13 @@ const Header: React.FC = () => {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
+                    <span>{t("auth.logout")}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
               <Button asChild>
-                <Link href="/auth">Login / Register</Link>
+                <Link href="/auth">{t("auth.login")} / {t("auth.register")}</Link>
               </Button>
             )}
 
@@ -255,14 +260,14 @@ const Header: React.FC = () => {
                         <div className="px-3 py-2">
                           <Button onClick={handleLogout} variant="destructive" className="w-full">
                             <LogOut className="mr-2 h-4 w-4" />
-                            Log out
+                            {t("auth.logout")}
                           </Button>
                         </div>
                       </>
                     ) : (
                       <SheetClose asChild>
                         <Link href="/auth">
-                          <Button className="w-full">Login / Register</Button>
+                          <Button className="w-full">{t("auth.login")} / {t("auth.register")}</Button>
                         </Link>
                       </SheetClose>
                     )}
