@@ -9,6 +9,11 @@ export enum UserRole {
   BUYER = "buyer"
 }
 
+export enum SubscriptionTier {
+  FREE = "free",
+  PREMIUM = "premium"
+}
+
 // User table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -113,6 +118,26 @@ export const insertFavoriteSchema = createInsertSchema(favorites).omit({
   createdAt: true,
 });
 
+// Subscription table for sellers
+export const subscriptions = pgTable("subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  tier: text("tier").notNull().default(SubscriptionTier.FREE),
+  startDate: timestamp("start_date").defaultNow(),
+  endDate: timestamp("end_date"),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types for ORM
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -128,6 +153,9 @@ export type InsertMessage = z.infer<typeof insertMessageSchema>;
 
 export type Favorite = typeof favorites.$inferSelect;
 export type InsertFavorite = z.infer<typeof insertFavoriteSchema>;
+
+export type Subscription = typeof subscriptions.$inferSelect;
+export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
 
 // Extended schemas for validation
 export const loginSchema = z.object({

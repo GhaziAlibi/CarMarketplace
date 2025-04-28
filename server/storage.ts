@@ -38,6 +38,7 @@ export interface IStorage {
   getCarsByShowroom(showroomId: number): Promise<Car[]>;
   getFeaturedCars(limit?: number): Promise<Car[]>;
   searchCars(params: CarSearchParams): Promise<Car[]>;
+  getCarCountByShowroomId(showroomId: number): Promise<number>;
   
   // Message operations
   getMessage(id: number): Promise<Message | undefined>;
@@ -52,6 +53,13 @@ export interface IStorage {
   deleteFavorite(id: number): Promise<boolean>;
   getFavoritesByUser(userId: number): Promise<Favorite[]>;
   isFavorite(userId: number, carId: number): Promise<boolean>;
+  
+  // Subscription operations
+  getSubscription(id: number): Promise<Subscription | undefined>;
+  getSubscriptionByUserId(userId: number): Promise<Subscription | undefined>;
+  createSubscription(subscriptionData: InsertSubscription): Promise<Subscription>;
+  updateSubscription(id: number, subscriptionData: Partial<Subscription>): Promise<Subscription | undefined>;
+  cancelSubscription(id: number): Promise<boolean>;
   
   // Session store
   sessionStore: Store;
