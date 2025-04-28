@@ -57,3 +57,87 @@
   }
 }
 
+/* RTL Support */
+html.rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+html.ltr {
+  direction: ltr;
+  text-align: left;
+}
+
+/* RTL specific adjustments */
+html.rtl .rtl-flip {
+  transform: scaleX(-1);
+}
+
+/* Reversing margins and paddings for RTL */
+html.rtl .rtl-mr {
+  margin-right: 0;
+  margin-left: 0.5rem;
+}
+
+html.rtl .rtl-ml {
+  margin-left: 0;
+  margin-right: 0.5rem;
+}
+
+html.rtl .rtl-pr {
+  padding-right: 0;
+  padding-left: 0.5rem;
+}
+
+html.rtl .rtl-pl {
+  padding-left: 0;
+  padding-right: 0.5rem;
+}
+
+/* Flip flex directions for RTL */
+html.rtl .flex-row {
+  flex-direction: row-reverse;
+}
+
+/* Reverse text alignment */
+html.rtl .text-left {
+  text-align: right;
+}
+
+html.rtl .text-right {
+  text-align: left;
+}
+
+/* Adjust border radiuses for RTL */
+html.rtl .rounded-l {
+  border-radius: 0;
+  border-top-right-radius: 0.25rem;
+  border-bottom-right-radius: 0.25rem;
+}
+
+html.rtl .rounded-r {
+  border-radius: 0;
+  border-top-left-radius: 0.25rem;
+  border-bottom-left-radius: 0.25rem;
+}
+
+/* Arabic font adjustments */
+html.rtl body,
+html.rtl input,
+html.rtl textarea,
+html.rtl select,
+html.rtl button {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Fix dropdown menus for RTL */
+html.rtl .dropdown-menu {
+  left: auto;
+  right: 0;
+}
+
+/* Fix shadows for RTL */
+html.rtl .shadow-md {
+  box-shadow: -2px 2px 6px rgba(0, 0, 0, 0.1);
+}
+

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -22,10 +23,12 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Car, User, Store, MessageCircle, Heart, LogOut, Settings, ChevronDown, Menu } from "lucide-react";
 import { UserRole } from "@shared/schema";
+import LanguageSwitcher from "@/components/language-switcher";
 
 const Header: React.FC = () => {
   const [location] = useLocation();
   const { user, logoutMutation } = useAuth();
+  const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const getInitials = (name: string) => {
@@ -37,9 +40,9 @@ const Header: React.FC = () => {
   };
 
   const navLinks = [
-    { title: "Home", path: "/", active: location === "/" },
-    { title: "Browse Cars", path: "/cars", active: location.startsWith("/cars") },
-    { title: "Showrooms", path: "/showrooms", active: location.startsWith("/showrooms") },
+    { title: t("navigation.home"), path: "/", active: location === "/" },
+    { title: t("navigation.cars"), path: "/cars", active: location.startsWith("/cars") },
+    { title: t("navigation.showrooms"), path: "/showrooms", active: location.startsWith("/showrooms") },
   ];
 
   const handleLogout = () => {
