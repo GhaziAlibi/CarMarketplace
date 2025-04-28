@@ -1038,6 +1038,12 @@ export class MemStorage implements IStorage {
   async getAllShowrooms(): Promise<Showroom[]> {
     return Array.from(this.showroomsMap.values());
   }
+  
+  async getFeaturedShowrooms(): Promise<Showroom[]> {
+    return Array.from(this.showroomsMap.values())
+      .filter(showroom => showroom.isFeatured)
+      .slice(0, 4); // Limit to 4 featured showrooms
+  }
 
   // Car operations
   async getCar(id: number): Promise<Car | undefined> {

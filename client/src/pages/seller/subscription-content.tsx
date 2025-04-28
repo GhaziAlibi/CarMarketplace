@@ -28,10 +28,19 @@ import {
   Infinity,
   Loader2,
   BadgeCheck,
-  CheckCircle2
+  CheckCircle2,
+  Award,
+  Info
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import PaymentForm from "@/components/payment-form";
 
 const SubscriptionContent: React.FC = () => {
@@ -51,6 +60,24 @@ const SubscriptionContent: React.FC = () => {
     onSuccess: (data) => {
       setCurrentSubscription(data);
     }
+  });
+  
+  // Get seller's showroom
+  const {
+    data: showroom,
+    isLoading: isLoadingShowroom,
+  } = useQuery({
+    queryKey: ["/api/seller/showroom"],
+    enabled: !!user
+  });
+  
+  // Check VIP slot availability 
+  const {
+    data: vipSlotsData,
+    isLoading: isLoadingVipSlots,
+    refetch: refetchVipSlots
+  } = useQuery({
+    queryKey: ["/api/showrooms/featured/count"],
   });
   
   // Car count check to determine if within limits
@@ -77,7 +104,7 @@ const SubscriptionContent: React.FC = () => {
       refetchSubscription();
       toast({
         title: "Subscription Cancelled",
-        description: "Your subscription has been cancelled. You will be downgraded to free tier at the end of your billing cycle.",
+        description: "Your subscription has been downgraded to free tier at the end of your billing cycle.",
         variant: "default", 
       });
     },
@@ -85,6 +112,53 @@ const SubscriptionContent: React.FC = () => {
       toast({
         title: "Error",
         description: error.message || "There was an error cancelling your subscription.",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // VIP feature mutations
+  const setShowroomAsFeatured = useMutation({
+    mutationFn: async () => {
+      if (!showroom) throw new Error("No showroom found");
+      const res = await apiRequest("POST", `/api/showrooms/${showroom.id}/feature`, {});
+      return res.json();
+    },
+    onSuccess: () => {
+      refetchVipSlots();
+      toast({
+        title: "VIP Status Activated",
+        description: "Your showroom is now featured in the VIP section!",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "There was an error featuring your showroom.",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const removeShowroomFromFeatured = useMutation({
+    mutationFn: async () => {
+      if (!showroom) throw new Error("No showroom found");
+      const res = await apiRequest("POST", `/api/showrooms/${showroom.id}/unfeature`, {});
+      return res.json();
+    },
+    onSuccess: () => {
+      refetchVipSlots();
+      toast({
+        title: "VIP Status Removed",
+        description: "Your showroom has been removed from the VIP section.",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "There was an error removing your showroom from featured.",
         variant: "destructive",
       });
     }
@@ -124,7 +198,7 @@ const SubscriptionContent: React.FC = () => {
     };
   };
   
-  if (isLoadingSubscription || isCheckingLimit) {
+  if (isLoadingSubscription || isCheckingLimit || isLoadingShowroom || isLoadingVipSlots) {
     return (
       <Card>
         <CardHeader>
@@ -358,6 +432,98 @@ const SubscriptionContent: React.FC = () => {
             </div>
           </div>
         </div>
+        
+        {/* Only show VIP section for Premium users */}
+        {stats.isPremiumTier && stats.isActive && showroom && (
+          <>
+            <Separator className="my-6" />
+            
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-medium">VIP Showroom Status</h3>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-80">
+                        <p>Featured showrooms appear in the VIP section at the top of the showrooms page. Only 4 showrooms can be featured at a time.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                
+                <Badge variant="outline" className="gap-1">
+                  <span>{vipSlotsData?.count || 0}</span>
+                  <span>/</span>
+                  <span>4</span>
+                  <span>Slots Used</span>
+                </Badge>
+              </div>
+              
+              <div className="rounded-lg border p-6 bg-amber-50 dark:bg-amber-950/20">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Award className="h-6 w-6 text-amber-500" />
+                      <h4 className="text-lg font-bold">VIP Showroom Feature</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Make your showroom stand out in the VIP section at the top of the showrooms page.
+                    </p>
+                    
+                    {showroom.isFeatured && (
+                      <div className="flex items-center text-green-600 mt-2">
+                        <BadgeCheck className="h-5 w-5 mr-1" />
+                        <span className="font-medium">Your showroom is featured</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div>
+                    {showroom.isFeatured ? (
+                      <Button 
+                        variant="outline"
+                        onClick={() => removeShowroomFromFeatured.mutate()}
+                        disabled={removeShowroomFromFeatured.isPending}
+                        className="w-full md:w-auto"
+                      >
+                        {removeShowroomFromFeatured.isPending && (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        Remove VIP Status
+                      </Button>
+                    ) : (
+                      <Button 
+                        onClick={() => setShowroomAsFeatured.mutate()}
+                        disabled={setShowroomAsFeatured.isPending || (vipSlotsData?.count >= 4)}
+                        className="w-full md:w-auto bg-amber-500 hover:bg-amber-600 text-white"
+                      >
+                        {setShowroomAsFeatured.isPending ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Award className="mr-2 h-4 w-4" />
+                        )}
+                        Upgrade to VIP
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                
+                {!showroom.isFeatured && vipSlotsData?.count >= 4 && (
+                  <Alert variant="destructive" className="mt-4">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>All VIP slots are taken</AlertTitle>
+                    <AlertDescription>
+                      Please try again later when a slot becomes available.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );
