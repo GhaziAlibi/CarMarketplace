@@ -75,7 +75,7 @@ const COUNTRIES = [
   "India", "South Africa", "Russia", "United Arab Emirates", "Saudi Arabia"
 ];
 
-const EditShowroomContent: React.FC<EditShowroomContentProps> = ({ showroom }) => {
+const EditShowroomContent: React.FC<EditShowroomContentProps> = ({ showroom, isLoading, isError }) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("basic");
@@ -172,6 +172,46 @@ const EditShowroomContent: React.FC<EditShowroomContentProps> = ({ showroom }) =
   const onSubmit = (values: ShowroomFormValues) => {
     updateShowroomMutation.mutate(values);
   };
+  
+  // Show loading state
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Loading Showroom</CardTitle>
+          <CardDescription>Please wait while we load your showroom data</CardDescription>
+        </CardHeader>
+        <CardContent className="text-center py-10">
+          <Loader2 className="h-12 w-12 text-primary mx-auto mb-4 animate-spin" />
+          <p className="mb-4">This may take a moment...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  // Show error state
+  if (isError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Something Went Wrong</CardTitle>
+          <CardDescription>We encountered an error while loading your showroom</CardDescription>
+        </CardHeader>
+        <CardContent className="text-center py-10">
+          <Store className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="mb-4">There was a problem retrieving your showroom information. Please try again.</p>
+          <Button 
+            onClick={() => {
+              window.history.pushState(null, '', '/seller/dashboard');
+              window.dispatchEvent(new PopStateEvent('popstate'));
+            }}
+          >
+            Return to Dashboard
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
   
   // For sellers that somehow don't have a showroom yet (should be rare as showrooms are created during registration)
   if (!showroom) {
