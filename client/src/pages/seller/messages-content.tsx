@@ -122,7 +122,7 @@ const MessagesContent: React.FC<MessagesContentProps> = ({
 
   // Filter and sort conversations
   const filteredConversations = React.useMemo(() => {
-    let filtered = [...conversations];
+    let filtered = [...(conversations || [])];
     
     // Apply search filter
     if (searchTerm) {
@@ -281,9 +281,9 @@ const MessagesContent: React.FC<MessagesContentProps> = ({
               <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="unread">
                 Unread
-                {conversations.reduce((count, conv) => count + conv.unreadCount, 0) > 0 && (
+                {(conversations || []).reduce((count, conv) => count + conv.unreadCount, 0) > 0 && (
                   <Badge variant="secondary" className="ml-1 bg-primary text-white">
-                    {conversations.reduce((count, conv) => count + conv.unreadCount, 0)}
+                    {(conversations || []).reduce((count, conv) => count + conv.unreadCount, 0)}
                   </Badge>
                 )}
               </TabsTrigger>
@@ -292,7 +292,7 @@ const MessagesContent: React.FC<MessagesContentProps> = ({
         </CardHeader>
         
         <CardContent className="px-0 pb-0 max-h-[500px] overflow-y-auto">
-          {filteredConversations.length > 0 ? (
+          {filteredConversations?.length > 0 ? (
             <div className="divide-y">
               {filteredConversations.map((conversation) => (
                 <div

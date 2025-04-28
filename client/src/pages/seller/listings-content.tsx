@@ -99,7 +99,7 @@ const ListingsContent: React.FC<ListingsContentProps> = ({
           </div>
         </CardHeader>
         <CardContent>
-          {cars.length > 0 ? (
+          {cars?.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -114,7 +114,7 @@ const ListingsContent: React.FC<ListingsContentProps> = ({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {cars.map((car: any) => (
+                  {cars?.map((car: any) => (
                     <TableRow key={car.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
