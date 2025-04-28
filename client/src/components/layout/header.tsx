@@ -57,13 +57,13 @@ const Header: React.FC = () => {
         return (
           <>
             <DropdownMenuItem asChild>
-              <Link href="/admin/dashboard">Dashboard</Link>
+              <Link href="/admin/dashboard">{t("admin.dashboard")}</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/admin/listings">Manage Listings</Link>
+              <Link href="/admin/listings">{t("admin.carManagement")}</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/admin/users">Manage Users</Link>
+              <Link href="/admin/users">{t("admin.userManagement")}</Link>
             </DropdownMenuItem>
           </>
         );
@@ -71,13 +71,13 @@ const Header: React.FC = () => {
         return (
           <>
             <DropdownMenuItem asChild>
-              <Link href="/seller/dashboard">Dashboard</Link>
+              <Link href="/seller/dashboard">{t("seller.dashboard")}</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/seller/add-listing">Add Listing</Link>
+              <Link href="/seller/add-listing">{t("seller.addListing")}</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/seller/messages">Messages</Link>
+              <Link href="/seller/messages">{t("seller.messages")}</Link>
             </DropdownMenuItem>
           </>
         );
@@ -85,10 +85,10 @@ const Header: React.FC = () => {
         return (
           <>
             <DropdownMenuItem asChild>
-              <Link href="/saved-cars">Saved Cars</Link>
+              <Link href="/saved-cars">{t("buyer.favorites")}</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/buyer/messages">Messages</Link>
+              <Link href="/buyer/messages">{t("buyer.messages")}</Link>
             </DropdownMenuItem>
           </>
         );
@@ -227,7 +227,7 @@ const Header: React.FC = () => {
                               href="/admin/dashboard"
                               className="px-3 py-2 text-base font-medium"
                             >
-                              Admin Dashboard
+                              {t("admin.dashboard")}
                             </Link>
                           )}
                           {user.role === UserRole.SELLER && (
@@ -235,7 +235,7 @@ const Header: React.FC = () => {
                               href="/seller/dashboard"
                               className="px-3 py-2 text-base font-medium"
                             >
-                              Seller Dashboard
+                              {t("seller.dashboard")}
                             </Link>
                           )}
                           {user.role === UserRole.BUYER && (
@@ -243,7 +243,7 @@ const Header: React.FC = () => {
                               href="/saved-cars"
                               className="px-3 py-2 text-base font-medium"
                             >
-                              Saved Cars
+                              {t("buyer.favorites")}
                             </Link>
                           )}
                         </SheetClose>
@@ -253,7 +253,7 @@ const Header: React.FC = () => {
                             href="/messages"
                             className="px-3 py-2 text-base font-medium"
                           >
-                            Messages
+                            {t("navigation.messages")}
                           </Link>
                         </SheetClose>
                         
