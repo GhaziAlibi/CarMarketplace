@@ -62,19 +62,28 @@ const SellerDashboard: React.FC = () => {
         };
       case "/seller/listings":
         return {
-          component: <ListingsContent />,
+          component: <ListingsContent 
+            showroom={showroom} 
+            cars={cars} 
+            isLoadingCars={isLoadingCars} 
+          />,
           title: t("seller.listings"),
           description: t("seller.listingsDesc"),
         };
       case "/seller/add-listing":
         return {
-          component: <AddListingContent />,
+          component: <AddListingContent 
+            showroom={showroom} 
+          />,
           title: t("seller.addListing"),
           description: t("seller.addListingDesc"),
         };
       case "/seller/messages":
         return {
-          component: <MessagesContent />,
+          component: <MessagesContent 
+            messages={messages} 
+            isLoadingMessages={isLoadingMessages} 
+          />,
           title: t("navigation.messages"),
           description: t("seller.messagesDesc"),
         };
@@ -98,7 +107,13 @@ const SellerDashboard: React.FC = () => {
         };
       default:
         return {
-          component: <DashboardContent />,
+          component: <DashboardContent 
+            showroom={showroom} 
+            cars={cars} 
+            messages={messages} 
+            isLoadingCars={isLoadingCars} 
+            isLoadingMessages={isLoadingMessages} 
+          />,
           title: t("seller.dashboard"),
           description: t("seller.dashboardDesc"),
         };

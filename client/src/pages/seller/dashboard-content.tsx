@@ -118,7 +118,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
                     </div>
                     <div className="flex items-center">
                       <MessageSquare className="h-4 w-4 text-primary mr-1" />
-                      <span>{unreadMessages.length} Unread Messages</span>
+                      <span>{unreadMessages?.length || 0} Unread Messages</span>
                     </div>
                   </div>
                 </div>
@@ -246,7 +246,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
               </div>
             ) : messages?.length > 0 ? (
               <div className="space-y-4">
-                {messages.slice(0, 5).map((message: any) => (
+                {messages?.slice(0, 5).map((message: any) => (
                   <div key={message.id} className="flex items-start gap-3">
                     <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
                       message.isRead ? 'bg-gray-100 text-gray-500' : 'bg-blue-100 text-blue-500'
@@ -323,7 +323,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {cars.map((car: any) => (
+                  {cars?.map((car: any) => (
                     <TableRow key={car.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
