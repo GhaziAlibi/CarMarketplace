@@ -52,8 +52,8 @@ const SellerDashboard: React.FC = () => {
         return {
           component: <DashboardContent 
             showroom={showroom} 
-            cars={cars} 
-            messages={messages} 
+            cars={cars || []} 
+            messages={messages || []} 
             isLoadingCars={isLoadingCars} 
             isLoadingMessages={isLoadingMessages} 
           />,
@@ -64,7 +64,7 @@ const SellerDashboard: React.FC = () => {
         return {
           component: <ListingsContent 
             showroom={showroom} 
-            cars={cars} 
+            cars={cars || []} 
             isLoadingCars={isLoadingCars} 
           />,
           title: t("seller.listings"),
@@ -81,7 +81,7 @@ const SellerDashboard: React.FC = () => {
       case "/seller/messages":
         return {
           component: <MessagesContent 
-            messages={messages} 
+            messages={messages || []} 
             isLoadingMessages={isLoadingMessages} 
           />,
           title: t("navigation.messages"),
@@ -109,8 +109,8 @@ const SellerDashboard: React.FC = () => {
         return {
           component: <DashboardContent 
             showroom={showroom} 
-            cars={cars} 
-            messages={messages} 
+            cars={cars || []} 
+            messages={messages || []} 
             isLoadingCars={isLoadingCars} 
             isLoadingMessages={isLoadingMessages} 
           />,
