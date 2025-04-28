@@ -74,54 +74,53 @@ const ShowroomsPage: React.FC = () => {
       <Header />
       
       <main className="flex-grow">
-        {/* Hero Section */}
-        <div className="relative overflow-hidden bg-primary">
-          <div className="absolute inset-y-0 right-0 hidden w-1/2 sm:block lg:w-2/3">
-            <img
-              className="h-full w-full object-cover object-left"
-              src="https://images.unsplash.com/photo-1526996292069-fe51e3dc5948?q=80&w=2070&auto=format&fit=crop"
-              alt="Luxury car showroom"
-            />
-            <div className="absolute inset-0 bg-gradient-to-l from-primary/10 via-primary/50 to-primary"></div>
+        {/* Hero Section - Smaller and Nicer */}
+        <div className="relative overflow-hidden bg-gradient-to-r from-primary to-primary-dark">
+          <div className="absolute inset-0 bg-grid-white/5 pointer-events-none" 
+               style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 32 32\' width=\'32\' height=\'32\' fill=\'none\' stroke=\'%23fff\' stroke-opacity=\'0.05\'%3E%3Cpath d=\'M0 0 L32 32 M32 0 L0 32\'/%3E%3C/svg%3E")' }}>
           </div>
           
-          <div className="relative px-4 py-16 sm:px-6 sm:py-24 lg:py-32 lg:px-8">
-            <div className="mx-auto max-w-xl lg:mx-0 lg:max-w-lg">
-              <div className="mb-8 flex items-center">
-                <div className="bg-white/20 p-1 rounded-full">
-                  <Award className="h-6 w-6 text-amber-300" />
+          <div className="relative px-4 py-10 sm:px-6 sm:py-12 max-w-7xl mx-auto">
+            <div className="flex flex-col md:flex-row md:items-center">
+              <div className="md:w-7/12 md:pr-8">
+                <div className="flex items-center mb-4">
+                  <div className="bg-amber-400 p-1 rounded-full">
+                    <Award className="h-5 w-5 text-primary" />
+                  </div>
+                  <span className="ml-2 text-sm font-semibold uppercase tracking-wide text-amber-300">
+                    VIP Showroom Network
+                  </span>
                 </div>
-                <span className="ml-3 text-sm font-semibold uppercase tracking-wide text-amber-300">
-                  Premium Network
-                </span>
-              </div>
-              <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
-                Discover Premium <br /> Showrooms
-              </h1>
-              <p className="mt-6 text-xl text-white/80 max-w-lg">
-                Explore our curated network of verified luxury car dealers offering exceptional vehicles and premium customer service.
-              </p>
-              <div className="mt-10 flex gap-4">
-                <Button asChild className="bg-white text-primary hover:bg-white/90">
-                  <a href="#showrooms">Browse Showrooms</a>
-                </Button>
-                <Button asChild variant="outline" className="text-white border-white hover:bg-white/10">
-                  <a href="/auth">Join as Seller</a>
-                </Button>
+                <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl mb-3">
+                  Discover Premium Auto Showrooms
+                </h1>
+                <p className="text-white/80 max-w-lg text-base">
+                  Explore our curated network of verified luxury car dealers offering exceptional vehicles and premium customer service.
+                </p>
+                <div className="mt-6 flex gap-3">
+                  <Button asChild size="sm" className="bg-white text-primary hover:bg-white/90">
+                    <a href="#showrooms">Browse Showrooms</a>
+                  </Button>
+                  <Button asChild size="sm" variant="outline" className="text-white border-white hover:bg-white/10">
+                    <a href="/auth">Join as Seller</a>
+                  </Button>
+                </div>
               </div>
               
-              <div className="mt-12 grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-3">
-                <div>
-                  <p className="text-3xl font-bold text-white">{showrooms.length}</p>
-                  <p className="text-sm text-white/70">Active Showrooms</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-white">{cars.length}</p>
-                  <p className="text-sm text-white/70">Available Cars</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-white">4</p>
-                  <p className="text-sm text-white/70">VIP Spots</p>
+              <div className="mt-6 md:mt-0 md:w-5/12 bg-white/5 rounded-lg backdrop-blur-sm p-5 border border-white/10">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-white">{showrooms.length}</p>
+                    <p className="text-xs text-white/70">Showrooms</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-white">{cars.length}</p>
+                    <p className="text-xs text-white/70">Vehicles</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-white">4</p>
+                    <p className="text-xs text-white/70">VIP Spots</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -197,7 +196,7 @@ const ShowroomsPage: React.FC = () => {
                             </div>
                           </TooltipTrigger>
                           <TooltipContent className="max-w-sm">
-                            <p>Premium sellers with enhanced visibility and unlimited listings (Max 4 slots)</p>
+                            <p>VIP sellers with elite status, enhanced visibility and unlimited listings (Limited to 4 exclusive slots)</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -283,27 +282,34 @@ const ShowroomsPage: React.FC = () => {
           )}
         </div>
         
-        {/* Become a Premium Seller CTA */}
+        {/* Become a VIP Seller CTA */}
         <div className="bg-gray-50 py-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="bg-gradient-to-r from-primary to-primary-dark rounded-lg shadow-xl overflow-hidden">
-              <div className="pt-10 pb-12 px-6 sm:pt-16 sm:px-16 lg:py-16 lg:pr-0 xl:py-20 xl:px-20">
-                <div className="lg:self-center lg:max-w-2xl">
+            <div className="bg-gradient-to-r from-amber-500 to-amber-700 rounded-lg shadow-xl overflow-hidden">
+              <div className="pt-10 pb-12 px-6 sm:pt-16 sm:px-16 lg:py-16 lg:pr-0 xl:py-20 xl:px-20 relative">
+                <div className="absolute top-0 right-0 w-1/2 h-full opacity-5 pointer-events-none">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full text-white">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                  </svg>
+                </div>
+                <div className="lg:self-center lg:max-w-2xl relative z-10">
                   <div className="flex items-center gap-2 mb-4">
-                    <Award className="h-8 w-8 text-amber-300" />
-                    <span className="text-amber-300 font-bold uppercase">Premium</span>
+                    <div className="bg-white rounded-full p-1">
+                      <Award className="h-8 w-8 text-amber-600" />
+                    </div>
+                    <span className="text-white font-bold uppercase text-lg">VIP Status</span>
                   </div>
                   <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
-                    <span className="block">Boost your visibility with premium listing</span>
+                    <span className="block">Exclusive VIP Status for Elite Sellers</span>
                   </h2>
-                  <p className="mt-4 text-lg leading-6 text-indigo-100">
-                    Register as a premium seller to showcase unlimited vehicles to thousands of potential buyers.
-                    Get enhanced visibility, priority placement, and more customers for your business.
+                  <p className="mt-4 text-lg leading-6 text-white/90">
+                    Join our exclusive VIP program and get featured placement in our premium showroom section. 
+                    Includes unlimited listings, priority search ranking, and premium support with only 4 exclusive spots available.
                   </p>
                   <div className="mt-8 flex flex-col sm:flex-row gap-4">
                     <Button
                       size="lg"
-                      className="bg-white text-primary hover:bg-gray-50"
+                      className="bg-white text-amber-600 hover:bg-gray-50"
                       asChild
                     >
                       <a href="/auth">Register Now</a>

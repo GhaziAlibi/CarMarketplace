@@ -11,7 +11,8 @@ export enum UserRole {
 
 export enum SubscriptionTier {
   FREE = "free",
-  PREMIUM = "premium"
+  PREMIUM = "premium",
+  VIP = "vip"
 }
 
 // User table

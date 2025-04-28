@@ -186,11 +186,13 @@ const SubscriptionContent: React.FC = () => {
   const getSubscriptionStats = () => {
     const isFreeTier = !subscription || subscription.tier === SubscriptionTier.FREE;
     const isPremiumTier = subscription && subscription.tier === SubscriptionTier.PREMIUM;
+    const isVipTier = subscription && subscription.tier === SubscriptionTier.VIP;
     const isActive = subscription && subscription.active;
     
     return {
       isFreeTier,
       isPremiumTier,
+      isVipTier,
       isActive,
       carLimit: isFreeTier ? 3 : null,
       currentCars: carLimitData?.currentCount || 0,
@@ -265,7 +267,11 @@ const SubscriptionContent: React.FC = () => {
             <div>
               <h3 className="text-lg font-medium">Current Plan</h3>
               <p className="text-sm text-muted-foreground">
-                {stats.isFreeTier ? "Free tier" : "Premium tier"}
+                {stats.isFreeTier 
+                  ? "Free tier" 
+                  : stats.isPremiumTier 
+                    ? "Premium tier" 
+                    : "VIP tier"}
               </p>
             </div>
             <div className="flex items-center">
@@ -326,7 +332,7 @@ const SubscriptionContent: React.FC = () => {
         <div className="space-y-6">
           <h3 className="text-lg font-medium">Available Plans</h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Free Tier */}
             <div className="relative rounded-lg border p-6">
               {stats.isFreeTier && stats.isActive && (
@@ -358,6 +364,10 @@ const SubscriptionContent: React.FC = () => {
                 <li className="flex items-start">
                   <XCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
                   <span className="text-muted-foreground">Priority search ranking</span>
+                </li>
+                <li className="flex items-start">
+                  <XCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span className="text-muted-foreground">VIP showroom status</span>
                 </li>
               </ul>
               
@@ -413,12 +423,28 @@ const SubscriptionContent: React.FC = () => {
                   <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
                   <span>Priority search ranking</span>
                 </li>
+                <li className="flex items-start">
+                  <XCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span className="text-muted-foreground">VIP showroom status</span>
+                </li>
               </ul>
               
               {stats.isPremiumTier ? (
                 <Button disabled className="w-full bg-primary hover:bg-primary">
                   <BadgeCheck className="mr-2 h-4 w-4" />
                   Current Plan
+                </Button>
+              ) : stats.isVipTier ? (
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => cancelSubscriptionMutation.mutate()}
+                  disabled={cancelSubscriptionMutation.isPending}
+                >
+                  {cancelSubscriptionMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Downgrade to Premium
                 </Button>
               ) : (
                 <Button 
@@ -427,6 +453,69 @@ const SubscriptionContent: React.FC = () => {
                 >
                   <CreditCard className="mr-2 h-4 w-4" />
                   Upgrade to Premium
+                </Button>
+              )}
+            </div>
+
+            {/* VIP Tier */}
+            <div className="relative rounded-lg border border-amber-500 p-6 bg-amber-50 dark:bg-amber-950/20">
+              {stats.isVipTier && stats.isActive && (
+                <div className="absolute top-3 right-3 bg-amber-500 text-xs text-white px-2 py-1 rounded">
+                  Current Plan
+                </div>
+              )}
+              <div className="absolute top-0 right-0 w-32 h-32 -mr-6 -mt-6 opacity-5">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="w-full h-full text-amber-900">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+              </div>
+              
+              <div className="flex items-center gap-1 mb-2">
+                <Award className="h-5 w-5 text-amber-500" />
+                <h4 className="text-lg font-bold">VIP Tier</h4>
+                <Badge className="ml-2 bg-amber-200 text-amber-800 hover:bg-amber-300">Elite</Badge>
+              </div>
+              <p className="text-2xl font-bold mb-4">$49.99 <span className="text-sm font-normal text-muted-foreground">/month</span></p>
+              
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-start">
+                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span><strong>Unlimited</strong> car listings</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span>Premium showroom profile</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span>Priority message system</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span>Featured listings with highlights</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span>Top search ranking guarantee</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span><strong>Exclusive VIP showroom status</strong></span>
+                </li>
+              </ul>
+              
+              {stats.isVipTier ? (
+                <Button disabled className="w-full bg-amber-500 hover:bg-amber-500">
+                  <BadgeCheck className="mr-2 h-4 w-4" />
+                  Current Plan
+                </Button>
+              ) : (
+                <Button 
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-white"
+                  onClick={handleUpgradeToPremium}
+                >
+                  <Award className="mr-2 h-4 w-4" />
+                  Upgrade to VIP
                 </Button>
               )}
             </div>
