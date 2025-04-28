@@ -277,6 +277,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Seller must have a showroom to add cars" });
       }
       
+      // Check subscription tier and car listing limit
+      const subscription = await storage.getSubscriptionByUserId(req.user.id);
+      
+      // If no subscription, create a free one
+      if (!subscription) {
+        await storage.createSubscription({
+          userId: req.user.id,
+          tier: SubscriptionTier.FREE,
+          active: true
+        });
+      }
+      
+      // Check listing limits only if on free tier
+      if (!subscription || subscription.tier === SubscriptionTier.FREE) {
+        const carCount = await storage.getCarCountByShowroomId(showroom.id);
+        
+        // Free tier limit is 3 cars
+        if (carCount >= 3) {
+          return res.status(403).json({ 
+            error: "Car listing limit reached", 
+            message: "You've reached the maximum number of car listings for your subscription tier. Please upgrade to Premium for unlimited listings.",
+            upgradeUrl: "/seller/subscription"
+          });
+        }
+      }
+      
       // Create car with showroom ID
       const carData = {
         ...parseResult.data,
@@ -286,6 +312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const newCar = await storage.createCar(carData);
       res.status(201).json(newCar);
     } catch (error) {
+      console.error('Error creating car:', error);
       res.status(500).json({ error: "Failed to create car" });
     }
   });
@@ -524,6 +551,258 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       res.status(500).json({ error: "Failed to delete favorite" });
+    }
+  });
+
+  // Subscription routes
+  // Create a mock Stripe instance for development 
+  // In production, you'd use a real Stripe instance with your API key
+  const stripe = {
+    customers: {
+      create: async (params: any) => {
+        return { id: `cus_mock_${Date.now()}` };
+      }
+    },
+    subscriptions: {
+      create: async (params: any) => {
+        return { 
+          id: `sub_mock_${Date.now()}`,
+          status: 'active',
+          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+        };
+      },
+      cancel: async (subscriptionId: string) => {
+        return { id: subscriptionId, status: 'canceled' };
+      }
+    },
+    paymentIntents: {
+      create: async (params: any) => {
+        return { 
+          id: `pi_mock_${Date.now()}`,
+          client_secret: `pi_mock_secret_${Date.now()}`
+        };
+      }
+    }
+  };
+
+  // Get current user's subscription
+  app.get("/api/subscriptions/current", requireAuth, async (req, res) => {
+    try {
+      const subscription = await storage.getSubscriptionByUserId(req.user!.id);
+      
+      if (!subscription) {
+        // Create a default FREE subscription for sellers if they don't have one
+        if (req.user!.role === UserRole.SELLER) {
+          const newSubscription = await storage.createSubscription({
+            userId: req.user!.id,
+            tier: SubscriptionTier.FREE,
+            active: true
+          });
+          return res.json(newSubscription);
+        }
+        return res.status(404).json({ error: "No active subscription found" });
+      }
+      
+      res.json(subscription);
+    } catch (error) {
+      console.error('Error getting current subscription:', error);
+      res.status(500).json({ error: "Failed to get subscription" });
+    }
+  });
+
+  // Create a new subscription
+  app.post("/api/subscriptions", requireRole(UserRole.SELLER), async (req, res) => {
+    try {
+      // Check if user already has an active subscription
+      const existingSubscription = await storage.getSubscriptionByUserId(req.user!.id);
+      
+      if (existingSubscription && existingSubscription.active) {
+        return res.status(400).json({ 
+          error: "User already has an active subscription",
+          subscription: existingSubscription
+        });
+      }
+      
+      const { tier } = req.body;
+      
+      // Validate tier
+      if (!Object.values(SubscriptionTier).includes(tier)) {
+        return res.status(400).json({ error: "Invalid subscription tier" });
+      }
+      
+      // For paid tiers, create a mock Stripe customer and subscription
+      let stripeCustomerId = null;
+      let stripeSubscriptionId = null;
+      
+      if (tier === SubscriptionTier.PREMIUM) {
+        // Create mock Stripe customer
+        const customer = await stripe.customers.create({
+          email: req.user!.email,
+          name: req.user!.username
+        });
+        
+        stripeCustomerId = customer.id;
+        
+        // Create mock Stripe subscription
+        const subscription = await stripe.subscriptions.create({
+          customer: customer.id,
+          items: [{ price: 'price_mock_premium' }]
+        });
+        
+        stripeSubscriptionId = subscription.id;
+      }
+      
+      // Create subscription in our database
+      const newSubscription = await storage.createSubscription({
+        userId: req.user!.id,
+        tier,
+        stripeCustomerId,
+        stripeSubscriptionId,
+        active: true
+      });
+      
+      res.status(201).json(newSubscription);
+    } catch (error) {
+      console.error('Error creating subscription:', error);
+      res.status(500).json({ error: "Failed to create subscription" });
+    }
+  });
+
+  // Cancel subscription
+  app.post("/api/subscriptions/cancel", requireAuth, async (req, res) => {
+    try {
+      const subscription = await storage.getSubscriptionByUserId(req.user!.id);
+      
+      if (!subscription) {
+        return res.status(404).json({ error: "No active subscription found" });
+      }
+      
+      // If premium subscription with Stripe, cancel in Stripe first
+      if (subscription.tier === SubscriptionTier.PREMIUM && subscription.stripeSubscriptionId) {
+        await stripe.subscriptions.cancel(subscription.stripeSubscriptionId);
+      }
+      
+      // Cancel in our database
+      const cancelled = await storage.cancelSubscription(subscription.id);
+      
+      if (cancelled) {
+        // Create a new FREE subscription automatically
+        const freeSubscription = await storage.createSubscription({
+          userId: req.user!.id,
+          tier: SubscriptionTier.FREE,
+          active: true
+        });
+        
+        res.json({ 
+          message: "Subscription cancelled successfully", 
+          newSubscription: freeSubscription 
+        });
+      } else {
+        res.status(500).json({ error: "Failed to cancel subscription" });
+      }
+    } catch (error) {
+      console.error('Error cancelling subscription:', error);
+      res.status(500).json({ error: "Failed to cancel subscription" });
+    }
+  });
+
+  // Upgrade subscription
+  app.post("/api/subscriptions/upgrade", requireAuth, async (req, res) => {
+    try {
+      const subscription = await storage.getSubscriptionByUserId(req.user!.id);
+      
+      if (!subscription) {
+        return res.status(404).json({ error: "No active subscription found" });
+      }
+      
+      if (subscription.tier === SubscriptionTier.PREMIUM) {
+        return res.status(400).json({ error: "Already on Premium tier" });
+      }
+      
+      // Create a mock Stripe customer and subscription
+      const customer = await stripe.customers.create({
+        email: req.user!.email,
+        name: req.user!.username
+      });
+      
+      const stripeSubscription = await stripe.subscriptions.create({
+        customer: customer.id,
+        items: [{ price: 'price_mock_premium' }]
+      });
+      
+      // Cancel the current FREE subscription
+      await storage.cancelSubscription(subscription.id);
+      
+      // Create a new PREMIUM subscription
+      const premiumSubscription = await storage.createSubscription({
+        userId: req.user!.id,
+        tier: SubscriptionTier.PREMIUM,
+        stripeCustomerId: customer.id,
+        stripeSubscriptionId: stripeSubscription.id,
+        active: true
+      });
+      
+      res.json(premiumSubscription);
+    } catch (error) {
+      console.error('Error upgrading subscription:', error);
+      res.status(500).json({ error: "Failed to upgrade subscription" });
+    }
+  });
+
+  // Create payment intent for Stripe checkout
+  app.post("/api/create-payment-intent", requireAuth, async (req, res) => {
+    try {
+      // Create a mock payment intent
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: 1999, // $19.99
+        currency: 'usd',
+        payment_method_types: ['card'],
+        metadata: {
+          userId: req.user!.id,
+          subscriptionTier: SubscriptionTier.PREMIUM
+        }
+      });
+      
+      res.json({ 
+        clientSecret: paymentIntent.client_secret 
+      });
+    } catch (error) {
+      console.error('Error creating payment intent:', error);
+      res.status(500).json({ error: "Failed to create payment intent" });
+    }
+  });
+
+  // This route enforces subscription limits on car listings
+  app.post("/api/check-car-limit", requireRole(UserRole.SELLER), async (req, res) => {
+    try {
+      // Get user's showroom
+      const showroom = await storage.getShowroomByUserId(req.user!.id);
+      if (!showroom) {
+        return res.status(400).json({ error: "Seller must have a showroom" });
+      }
+      
+      // Get user's subscription
+      const subscription = await storage.getSubscriptionByUserId(req.user!.id);
+      if (!subscription) {
+        return res.json({ canAddMore: false, limit: 0, current: 0 });
+      }
+      
+      // Get current car count
+      const carCount = await storage.getCarCountByShowroomId(showroom.id);
+      
+      // Define limits based on tier
+      const limit = subscription.tier === SubscriptionTier.PREMIUM ? Infinity : 3;
+      const canAddMore = carCount < limit;
+      
+      res.json({
+        canAddMore,
+        limit,
+        current: carCount,
+        tier: subscription.tier
+      });
+    } catch (error) {
+      console.error('Error checking car limit:', error);
+      res.status(500).json({ error: "Failed to check car limit" });
     }
   });
 
