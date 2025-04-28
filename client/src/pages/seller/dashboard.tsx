@@ -38,6 +38,7 @@ import {
   Store,
   Settings,
   ExternalLink,
+  CreditCard,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -141,7 +142,7 @@ const SellerDashboard: React.FC = () => {
               <h1 className="text-2xl font-bold">Seller Dashboard</h1>
               <p className="text-gray-500 mt-1">Manage your car listings and track performance</p>
             </div>
-            <div className="flex space-x-4 mt-4 md:mt-0">
+            <div className="flex flex-wrap gap-4 mt-4 md:mt-0">
               <Button asChild>
                 <Link href="/seller/add-listing">
                   <Plus className="h-4 w-4 mr-2" />
@@ -157,6 +158,12 @@ const SellerDashboard: React.FC = () => {
                       {unreadMessages.length}
                     </Badge>
                   )}
+                </Link>
+              </Button>
+              <Button asChild variant="secondary">
+                <Link href="/seller/subscription">
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Manage Subscription
                 </Link>
               </Button>
             </div>
