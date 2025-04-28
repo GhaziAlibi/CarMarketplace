@@ -699,6 +699,208 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
     return !!favorite;
   }
+
+  // Additional utility methods
+  async getCarCountByShowroomId(showroomId: number): Promise<number> {
+    try {
+      const result = await db.execute(sql`
+        SELECT COUNT(*) FROM cars WHERE showroom_id = ${showroomId}
+      `);
+      return parseInt(result.rows[0].count);
+    } catch (error) {
+      console.error('Error counting cars by showroom:', error);
+      return 0;
+    }
+  }
+
+  // Subscription operations
+  async getSubscription(id: number): Promise<Subscription | undefined> {
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM subscriptions WHERE id = ${id}
+      `);
+      
+      if (result.rows.length === 0) return undefined;
+      
+      // Map column names to match our schema
+      const sub = result.rows[0];
+      return {
+        id: sub.id,
+        userId: sub.user_id,
+        tier: sub.tier,
+        startDate: sub.start_date,
+        endDate: sub.end_date,
+        stripeCustomerId: sub.stripe_customer_id,
+        stripeSubscriptionId: sub.stripe_subscription_id,
+        active: sub.active,
+        createdAt: sub.created_at,
+        updatedAt: sub.updated_at
+      } as Subscription;
+    } catch (error) {
+      console.error('Error in getSubscription:', error);
+      return undefined;
+    }
+  }
+  
+  async getSubscriptionByUserId(userId: number): Promise<Subscription | undefined> {
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM subscriptions 
+        WHERE user_id = ${userId} AND active = true
+        ORDER BY created_at DESC
+        LIMIT 1
+      `);
+      
+      if (result.rows.length === 0) return undefined;
+      
+      // Map column names to match our schema
+      const sub = result.rows[0];
+      return {
+        id: sub.id,
+        userId: sub.user_id,
+        tier: sub.tier,
+        startDate: sub.start_date,
+        endDate: sub.end_date,
+        stripeCustomerId: sub.stripe_customer_id,
+        stripeSubscriptionId: sub.stripe_subscription_id,
+        active: sub.active,
+        createdAt: sub.created_at,
+        updatedAt: sub.updated_at
+      } as Subscription;
+    } catch (error) {
+      console.error('Error in getSubscriptionByUserId:', error);
+      return undefined;
+    }
+  }
+  
+  async createSubscription(subscriptionData: InsertSubscription): Promise<Subscription> {
+    try {
+      // Set default tier to FREE if not provided
+      if (!subscriptionData.tier) {
+        subscriptionData.tier = SubscriptionTier.FREE;
+      }
+      
+      const result = await db.execute(sql`
+        INSERT INTO subscriptions 
+        (user_id, tier, stripe_customer_id, stripe_subscription_id, active)
+        VALUES 
+        (${subscriptionData.userId}, ${subscriptionData.tier}, 
+         ${subscriptionData.stripeCustomerId || null}, 
+         ${subscriptionData.stripeSubscriptionId || null}, 
+         ${subscriptionData.active !== false})
+        RETURNING *
+      `);
+      
+      if (result.rows.length === 0) {
+        throw new Error('Failed to create subscription');
+      }
+      
+      // Map column names to match our schema
+      const sub = result.rows[0];
+      return {
+        id: sub.id,
+        userId: sub.user_id,
+        tier: sub.tier,
+        startDate: sub.start_date,
+        endDate: sub.end_date,
+        stripeCustomerId: sub.stripe_customer_id,
+        stripeSubscriptionId: sub.stripe_subscription_id,
+        active: sub.active,
+        createdAt: sub.created_at,
+        updatedAt: sub.updated_at
+      } as Subscription;
+    } catch (error) {
+      console.error('Error in createSubscription:', error);
+      throw error;
+    }
+  }
+  
+  async updateSubscription(id: number, subscriptionData: Partial<Subscription>): Promise<Subscription | undefined> {
+    try {
+      // Build the SQL SET clause dynamically based on what fields are provided
+      const setValues: string[] = [];
+      const params: any[] = [];
+      let paramCounter = 1;
+      
+      if (subscriptionData.tier !== undefined) {
+        setValues.push(`tier = $${paramCounter++}`);
+        params.push(subscriptionData.tier);
+      }
+      
+      if (subscriptionData.endDate !== undefined) {
+        setValues.push(`end_date = $${paramCounter++}`);
+        params.push(subscriptionData.endDate);
+      }
+      
+      if (subscriptionData.stripeCustomerId !== undefined) {
+        setValues.push(`stripe_customer_id = $${paramCounter++}`);
+        params.push(subscriptionData.stripeCustomerId);
+      }
+      
+      if (subscriptionData.stripeSubscriptionId !== undefined) {
+        setValues.push(`stripe_subscription_id = $${paramCounter++}`);
+        params.push(subscriptionData.stripeSubscriptionId);
+      }
+      
+      if (subscriptionData.active !== undefined) {
+        setValues.push(`active = $${paramCounter++}`);
+        params.push(subscriptionData.active);
+      }
+      
+      // Add updated_at to always update the timestamp
+      setValues.push(`updated_at = NOW()`);
+      
+      if (setValues.length === 0) {
+        return await this.getSubscription(id); // Nothing to update, return current
+      }
+      
+      // Add the subscription ID to the params
+      params.push(id);
+      
+      const result = await db.execute(`
+        UPDATE subscriptions 
+        SET ${setValues.join(', ')}
+        WHERE id = $${paramCounter}
+        RETURNING *
+      `, params);
+      
+      if (result.rows.length === 0) return undefined;
+      
+      // Map column names to match our schema
+      const sub = result.rows[0];
+      return {
+        id: sub.id,
+        userId: sub.user_id,
+        tier: sub.tier,
+        startDate: sub.start_date,
+        endDate: sub.end_date,
+        stripeCustomerId: sub.stripe_customer_id,
+        stripeSubscriptionId: sub.stripe_subscription_id,
+        active: sub.active,
+        createdAt: sub.created_at,
+        updatedAt: sub.updated_at
+      } as Subscription;
+    } catch (error) {
+      console.error('Error in updateSubscription:', error);
+      return undefined;
+    }
+  }
+  
+  async cancelSubscription(id: number): Promise<boolean> {
+    try {
+      const result = await db.execute(sql`
+        UPDATE subscriptions
+        SET active = false, end_date = NOW(), updated_at = NOW()
+        WHERE id = ${id}
+        RETURNING id
+      `);
+      
+      return result.rows.length > 0;
+    } catch (error) {
+      console.error('Error in cancelSubscription:', error);
+      return false;
+    }
+  }
 }
 
 // For in-memory storage when needed
@@ -993,6 +1195,67 @@ export class MemStorage implements IStorage {
     return Array.from(this.favoritesMap.values()).some(
       (favorite) => favorite.userId === userId && favorite.carId === carId
     );
+  }
+
+  // Additional utility methods
+  async getCarCountByShowroomId(showroomId: number): Promise<number> {
+    return Array.from(this.carsMap.values()).filter(
+      (car) => car.showroomId === showroomId
+    ).length;
+  }
+  
+  // Subscription operations - for memory storage, just simulating a subscription system
+  private subscriptionsMap: Map<number, Subscription> = new Map();
+  private currentSubscriptionId: number = 1;
+  
+  async getSubscription(id: number): Promise<Subscription | undefined> {
+    return this.subscriptionsMap.get(id);
+  }
+  
+  async getSubscriptionByUserId(userId: number): Promise<Subscription | undefined> {
+    return Array.from(this.subscriptionsMap.values()).find(
+      (sub) => sub.userId === userId && sub.active
+    );
+  }
+  
+  async createSubscription(subscriptionData: InsertSubscription): Promise<Subscription> {
+    const id = this.currentSubscriptionId++;
+    const subscription: Subscription = {
+      ...subscriptionData,
+      id,
+      tier: subscriptionData.tier || SubscriptionTier.FREE,
+      startDate: new Date(),
+      endDate: null,
+      active: subscriptionData.active !== false,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.subscriptionsMap.set(id, subscription);
+    return subscription;
+  }
+  
+  async updateSubscription(id: number, subscriptionData: Partial<Subscription>): Promise<Subscription | undefined> {
+    const existingSubscription = await this.getSubscription(id);
+    if (!existingSubscription) return undefined;
+    
+    const updatedSubscription = { 
+      ...existingSubscription, 
+      ...subscriptionData,
+      updatedAt: new Date()
+    };
+    this.subscriptionsMap.set(id, updatedSubscription);
+    return updatedSubscription;
+  }
+  
+  async cancelSubscription(id: number): Promise<boolean> {
+    const existingSubscription = await this.getSubscription(id);
+    if (!existingSubscription) return false;
+    
+    existingSubscription.active = false;
+    existingSubscription.endDate = new Date();
+    existingSubscription.updatedAt = new Date();
+    this.subscriptionsMap.set(id, existingSubscription);
+    return true;
   }
 }
 

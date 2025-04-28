@@ -2,7 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, requireAuth, requireRole, requireAdmin, hashPassword } from "./auth";
-import { UserRole, insertCarSchema, insertShowroomSchema, insertMessageSchema, insertFavoriteSchema, carSearchSchema } from "@shared/schema";
+import { UserRole, SubscriptionTier, insertCarSchema, insertShowroomSchema, insertMessageSchema, insertFavoriteSchema, carSearchSchema, insertSubscriptionSchema } from "@shared/schema";
+import Stripe from "stripe";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
