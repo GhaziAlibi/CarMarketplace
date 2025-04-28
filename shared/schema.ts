@@ -47,6 +47,9 @@ export const showrooms = pgTable("showrooms", {
   email: text("email"),
   rating: integer("rating").default(0),
   reviewCount: integer("review_count").default(0),
+  isFeatured: boolean("is_featured").default(false),
+  website: text("website"),
+  openingHours: text("opening_hours"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

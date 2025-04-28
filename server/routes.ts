@@ -771,6 +771,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to create payment intent" });
     }
   });
+  
+  // Update showroom featured status when subscribing to premium
+  app.post("/api/update-featured-status", requireAuth, requireRole(UserRole.SELLER), async (req, res) => {
+    try {
+      const subscription = await storage.getSubscriptionByUserId(req.user!.id);
+      
+      if (!subscription || subscription.tier !== SubscriptionTier.PREMIUM || !subscription.active) {
+        return res.status(400).json({ 
+          error: "Active premium subscription required to be featured",
+          message: "You need to be on the Premium subscription tier to feature your showroom."
+        });
+      }
+      
+      const showroom = await storage.getShowroomByUserId(req.user!.id);
+      if (!showroom) {
+        return res.status(400).json({ error: "Seller must have a showroom" });
+      }
+      
+      // Update the showroom to be featured
+      const updated = await storage.updateShowroom(showroom.id, {
+        isFeatured: true
+      });
+      
+      res.json(updated);
+    } catch (error) {
+      console.error('Error updating featured status:', error);
+      res.status(500).json({ error: "Failed to update featured status" });
+    }
+  });
 
   // This route enforces subscription limits on car listings
   app.post("/api/check-car-limit", requireRole(UserRole.SELLER), async (req, res) => {
