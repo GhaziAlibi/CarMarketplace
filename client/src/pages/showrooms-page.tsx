@@ -5,6 +5,7 @@ import Footer from "@/components/layout/footer";
 import ShowroomCard from "@/components/showroom-card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Loader2, Search, Store, Award, Info, Filter } from "lucide-react";
 import {
   Tooltip,
@@ -74,23 +75,56 @@ const ShowroomsPage: React.FC = () => {
       
       <main className="flex-grow">
         {/* Hero Section */}
-        <div className="bg-secondary-dark relative">
-          <div className="absolute inset-0">
+        <div className="relative overflow-hidden bg-primary">
+          <div className="absolute inset-y-0 right-0 hidden w-1/2 sm:block lg:w-2/3">
             <img
-              className="w-full h-64 object-cover"
-              src="https://images.unsplash.com/photo-1567361808960-dec9cb578182?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80"
-              alt="Car showroom"
+              className="h-full w-full object-cover object-left"
+              src="https://images.unsplash.com/photo-1526996292069-fe51e3dc5948?q=80&w=2070&auto=format&fit=crop"
+              alt="Luxury car showroom"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-secondary-dark to-transparent opacity-80"></div>
+            <div className="absolute inset-0 bg-gradient-to-l from-primary/10 via-primary/50 to-primary"></div>
           </div>
           
-          <div className="relative max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
-            <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-              Our Premium Showroom Partners
-            </h1>
-            <p className="mt-4 max-w-xl text-lg text-gray-300">
-              Explore our network of verified luxury car dealers offering exceptional vehicles and services.
-            </p>
+          <div className="relative px-4 py-16 sm:px-6 sm:py-24 lg:py-32 lg:px-8">
+            <div className="mx-auto max-w-xl lg:mx-0 lg:max-w-lg">
+              <div className="mb-8 flex items-center">
+                <div className="bg-white/20 p-1 rounded-full">
+                  <Award className="h-6 w-6 text-amber-300" />
+                </div>
+                <span className="ml-3 text-sm font-semibold uppercase tracking-wide text-amber-300">
+                  Premium Network
+                </span>
+              </div>
+              <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
+                Discover Premium <br /> Showrooms
+              </h1>
+              <p className="mt-6 text-xl text-white/80 max-w-lg">
+                Explore our curated network of verified luxury car dealers offering exceptional vehicles and premium customer service.
+              </p>
+              <div className="mt-10 flex gap-4">
+                <Button asChild className="bg-white text-primary hover:bg-white/90">
+                  <a href="#showrooms">Browse Showrooms</a>
+                </Button>
+                <Button asChild variant="outline" className="text-white border-white hover:bg-white/10">
+                  <a href="/auth">Join as Seller</a>
+                </Button>
+              </div>
+              
+              <div className="mt-12 grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-3">
+                <div>
+                  <p className="text-3xl font-bold text-white">{showrooms.length}</p>
+                  <p className="text-sm text-white/70">Active Showrooms</p>
+                </div>
+                <div>
+                  <p className="text-3xl font-bold text-white">{cars.length}</p>
+                  <p className="text-sm text-white/70">Available Cars</p>
+                </div>
+                <div>
+                  <p className="text-3xl font-bold text-white">4</p>
+                  <p className="text-sm text-white/70">VIP Spots</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -150,32 +184,45 @@ const ShowroomsPage: React.FC = () => {
             <>
               {/* VIP Featured Showrooms Section */}
               {featuredShowrooms.length > 0 && !searchQuery && (
-                <div className="mb-12">
-                  <div className="flex items-center mb-6">
-                    <Award className="h-6 w-6 text-amber-500 mr-2" />
-                    <h2 className="text-2xl font-bold text-gray-900">VIP Showrooms</h2>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="ml-2 cursor-help">
-                            <Info className="h-4 w-4 text-gray-400" />
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-sm">
-                          <p>Premium sellers with enhanced visibility and unlimited listings</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                <div className="mb-12" id="vip-showrooms">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center">
+                      <Award className="h-6 w-6 text-amber-500 mr-2" />
+                      <h2 className="text-2xl font-bold text-gray-900">VIP Showrooms</h2>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="ml-2 cursor-help">
+                              <Info className="h-4 w-4 text-gray-400" />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-sm">
+                            <p>Premium sellers with enhanced visibility and unlimited listings (Max 4 slots)</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                      {featuredShowrooms.length}/4 VIP slots filled
+                    </Badge>
                   </div>
                   
-                  <div className="space-y-6">
-                    {featuredShowrooms.map((showroom: any) => (
-                      <ShowroomCard
-                        key={showroom.id}
-                        showroom={showroom}
-                        carCount={getCarCount(showroom.id)}
-                        isFeaturedLayout={true}
-                      />
+                  {/* VIP showrooms grid - max 4 */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {featuredShowrooms.slice(0, 4).map((showroom: any) => (
+                      <div key={showroom.id} className="relative">
+                        <div className="absolute -top-1 -right-1 z-10">
+                          <Badge className="bg-amber-500 text-white px-2 py-1">
+                            <Award className="h-3.5 w-3.5 mr-1" />
+                            VIP
+                          </Badge>
+                        </div>
+                        <ShowroomCard
+                          showroom={showroom}
+                          carCount={getCarCount(showroom.id)}
+                          isFeaturedLayout={false}
+                        />
+                      </div>
                     ))}
                   </div>
                   

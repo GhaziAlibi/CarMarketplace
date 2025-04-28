@@ -393,6 +393,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to update featured status" });
     }
   });
+  
+  // VIP/Featured Showroom Management
+  
+  // Get featured showrooms
+  app.get("/api/showrooms/featured", async (req, res) => {
+    try {
+      const featuredShowrooms = await storage.getFeaturedShowrooms();
+      res.json(featuredShowrooms);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+    
+  // Get total count of featured showrooms (for VIP section)
+  app.get("/api/showrooms/featured/count", async (req, res) => {
+    try {
+      const featuredShowrooms = await storage.getFeaturedShowrooms();
+      res.json({ count: featuredShowrooms.length });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Set showroom as featured (VIP)
+  app.post("/api/showrooms/:id/feature", requireRole(UserRole.SELLER), async (req, res) => {
+    try {
+      const showroomId = parseInt(req.params.id);
+      
+      // Check if this showroom belongs to the current user
+      const showroom = await storage.getShowroom(showroomId);
+      if (!showroom) {
+        return res.status(404).json({ message: "Showroom not found" });
+      }
+      
+      if (showroom.userId !== req.user!.id) {
+        return res.status(403).json({ message: "You don't have permission to update this showroom" });
+      }
+      
+      // Check if the user has premium subscription
+      const subscription = await storage.getSubscriptionByUserId(req.user!.id);
+      if (!subscription || subscription.tier !== SubscriptionTier.PREMIUM || !subscription.active) {
+        return res.status(403).json({ 
+          message: "Premium subscription required to feature your showroom"
+        });
+      }
+      
+      // Check if we have reached the maximum VIP slots
+      const featuredShowrooms = await storage.getFeaturedShowrooms();
+      if (featuredShowrooms.length >= 4 && !showroom.isFeatured) {
+        return res.status(400).json({ 
+          message: "All VIP slots are taken. Please try again later.",
+          isFeatured: showroom.isFeatured,
+          vipCount: featuredShowrooms.length
+        });
+      }
+      
+      // Set as featured
+      const updatedShowroom = await storage.updateShowroom(showroomId, { 
+        isFeatured: true 
+      });
+      
+      res.json(updatedShowroom);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Remove showroom from featured (VIP)
+  app.post("/api/showrooms/:id/unfeature", requireRole(UserRole.SELLER), async (req, res) => {
+    try {
+      const showroomId = parseInt(req.params.id);
+      
+      // Check if this showroom belongs to the current user
+      const showroom = await storage.getShowroom(showroomId);
+      if (!showroom) {
+        return res.status(404).json({ message: "Showroom not found" });
+      }
+      
+      if (showroom.userId !== req.user!.id) {
+        return res.status(403).json({ message: "You don't have permission to update this showroom" });
+      }
+      
+      // Set as not featured
+      const updatedShowroom = await storage.updateShowroom(showroomId, { 
+        isFeatured: false 
+      });
+      
+      res.json(updatedShowroom);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
 
   // Messages routes
   app.get("/api/messages", requireAuth, async (req, res) => {

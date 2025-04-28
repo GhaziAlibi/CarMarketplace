@@ -28,6 +28,7 @@ export interface IStorage {
   createShowroom(showroom: InsertShowroom, userId: number): Promise<Showroom>;
   updateShowroom(id: number, showroomData: Partial<Showroom>): Promise<Showroom | undefined>;
   getAllShowrooms(): Promise<Showroom[]>;
+  getFeaturedShowrooms(): Promise<Showroom[]>;
   
   // Car operations
   getCar(id: number): Promise<Car | undefined>;
@@ -262,6 +263,14 @@ export class DatabaseStorage implements IStorage {
 
   async getAllShowrooms(): Promise<Showroom[]> {
     return await db.select().from(showrooms);
+  }
+  
+  async getFeaturedShowrooms(): Promise<Showroom[]> {
+    return await db
+      .select()
+      .from(showrooms)
+      .where(eq(showrooms.isFeatured, true))
+      .limit(4); // Max 4 VIP showrooms
   }
 
   // Car operations
