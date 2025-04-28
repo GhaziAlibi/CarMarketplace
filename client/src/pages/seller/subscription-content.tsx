@@ -1,420 +1,366 @@
-import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import React from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { SubscriptionTier } from "@shared/schema";
 import { 
   Card,
+  CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
-  CardContent
+  CardTitle
 } from "@/components/ui/card";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Loader2, 
-  CreditCard, 
-  AlertTriangle, 
-  Star, 
-  Sparkles, 
-  Zap, 
-  CarFront,
-  Search,
-  MessageSquare,
-  Medal
+import {
+  CreditCard,
+  CheckCircle,
+  XCircle,
+  Car,
+  AlertTriangle,
+  Infinity,
+  Loader2,
+  BadgeCheck,
+  CheckCircle2
 } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Elements } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
 import PaymentForm from "@/components/payment-form";
 
-// Initialize Stripe
-const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
-  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY) 
-  : null;
-
-export default function SubscriptionContent() {
+const SubscriptionContent: React.FC = () => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [isCheckingCarLimit, setIsCheckingCarLimit] = useState(false);
-  const [carStats, setCarStats] = useState<{
-    canAddMore: boolean;
-    limit: number;
-    current: number;
-    tier: string;
-  } | null>(null);
-
-  // Query for current subscription
-  const { 
-    data: subscription, 
+  const [showPaymentForm, setShowPaymentForm] = React.useState(false);
+  const [currentSubscription, setCurrentSubscription] = React.useState<any>(null);
+  
+  // Get current subscription
+  const {
+    data: subscription,
     isLoading: isLoadingSubscription,
-    error: subscriptionError,
     refetch: refetchSubscription
   } = useQuery({
-    queryKey: ['/api/subscriptions/current'],
-    queryFn: async () => {
-      const res = await apiRequest('GET', '/api/subscriptions/current');
-      return res.json();
-    },
+    queryKey: ["/api/subscriptions/current"],
     enabled: !!user,
-  });
-
-  // Query for car listing limits
-  useEffect(() => {
-    const checkCarLimit = async () => {
-      setIsCheckingCarLimit(true);
-      try {
-        const res = await apiRequest('POST', '/api/check-car-limit');
-        const data = await res.json();
-        setCarStats(data);
-      } catch (error) {
-        console.error("Failed to check car limit:", error);
-      } finally {
-        setIsCheckingCarLimit(false);
-      }
-    };
-
-    if (user && user.role === 'seller') {
-      checkCarLimit();
+    onSuccess: (data) => {
+      setCurrentSubscription(data);
     }
-  }, [user, subscription]);
-
-  // Mutation to upgrade subscription
-  const upgradeMutation = useMutation({
-    mutationFn: async () => {
-      // Step 1: Get payment intent client secret
-      const res = await apiRequest('POST', '/api/create-payment-intent');
-      const data = await res.json();
-      setClientSecret(data.clientSecret);
-      return data;
+  });
+  
+  // Car count check to determine if within limits
+  const {
+    data: carLimitData,
+    isLoading: isCheckingLimit,
+    refetch: refetchCarLimit
+  } = useQuery({
+    queryKey: ["/api/check-car-limit"],
+    queryFn: async () => {
+      const res = await apiRequest("POST", "/api/check-car-limit", {});
+      return res.json();
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: `Failed to initiate upgrade: ${error.message}`,
-        variant: "destructive"
-      });
-    }
+    enabled: !!user
   });
-
-  // Mutation to confirm subscription after payment
-  const confirmSubscriptionMutation = useMutation({
+  
+  // Cancel subscription mutation
+  const cancelSubscriptionMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest('POST', '/api/subscriptions/upgrade');
+      const res = await apiRequest("POST", "/api/subscriptions/cancel", {});
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/subscriptions/current'] });
       refetchSubscription();
-      
-      toast({
-        title: "Success!",
-        description: "Your subscription has been upgraded to Premium",
-        variant: "default"
-      });
-      
-      // Reset client secret
-      setClientSecret(null);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: `Failed to confirm subscription: ${error.message}`,
-        variant: "destructive"
-      });
-    }
-  });
-
-  // Mutation to cancel subscription
-  const cancelMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest('POST', '/api/subscriptions/cancel');
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/subscriptions/current'] });
-      refetchSubscription();
-      
       toast({
         title: "Subscription Cancelled",
-        description: "Your subscription has been downgraded to Free tier",
-        variant: "default"
+        description: "Your subscription has been cancelled. You will be downgraded to free tier at the end of your billing cycle.",
+        variant: "default", 
       });
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: `Failed to cancel subscription: ${error.message}`,
-        variant: "destructive"
+        description: error.message || "There was an error cancelling your subscription.",
+        variant: "destructive",
       });
     }
   });
-
-  // Handle payment success
-  const handlePaymentSuccess = () => {
-    confirmSubscriptionMutation.mutate();
+  
+  // Handle plan upgrade
+  const handleUpgradeToPremium = () => {
+    setShowPaymentForm(true);
   };
-
-  if (isLoadingSubscription) {
+  
+  // Handle successful payment
+  const handlePaymentSuccess = () => {
+    setShowPaymentForm(false);
+    refetchSubscription();
+    refetchCarLimit();
+    
+    toast({
+      title: "Subscription Activated",
+      description: "Your premium subscription has been activated successfully!",
+      variant: "default",
+    });
+  };
+  
+  // Calculate the subscription stats
+  const getSubscriptionStats = () => {
+    const isFreeTier = !subscription || subscription.tier === SubscriptionTier.FREE;
+    const isPremiumTier = subscription && subscription.tier === SubscriptionTier.PREMIUM;
+    const isActive = subscription && subscription.active;
+    
+    return {
+      isFreeTier,
+      isPremiumTier,
+      isActive,
+      carLimit: isFreeTier ? 3 : null,
+      currentCars: carLimitData?.currentCount || 0,
+      canAddMore: carLimitData?.canAddMore || false
+    };
+  };
+  
+  if (isLoadingSubscription || isCheckingLimit) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Subscription</CardTitle>
+          <CardDescription>Loading your subscription details...</CardDescription>
+        </CardHeader>
+        <CardContent className="flex justify-center items-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </CardContent>
+      </Card>
     );
   }
-
-  if (subscriptionError) {
+  
+  const stats = getSubscriptionStats();
+  
+  // If payment form is shown
+  if (showPaymentForm) {
     return (
-      <div className="flex flex-col justify-center items-center h-64">
-        <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
-        <h2 className="text-xl font-semibold">Error Loading Subscription</h2>
-        <p className="text-muted-foreground mt-2">
-          We couldn't load your subscription details. Please try again later.
-        </p>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Upgrade to Premium</CardTitle>
+          <CardDescription>Complete payment to activate your premium subscription</CardDescription>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <Alert className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Payment Simulation</AlertTitle>
+            <AlertDescription>
+              This is a demo payment form. No actual charges will be made.
+            </AlertDescription>
+          </Alert>
+          
+          <PaymentForm onPaymentSuccess={handlePaymentSuccess} />
+        </CardContent>
+        <CardFooter>
+          <Button 
+            variant="outline" 
+            className="mr-2" 
+            onClick={() => setShowPaymentForm(false)}
+          >
+            Cancel
+          </Button>
+        </CardFooter>
+      </Card>
     );
   }
-
+  
   return (
-    <>
-      {/* Current Usage Section */}
-      <div className="mb-10">
-        <Card className="border-0 shadow-sm bg-gradient-to-br from-primary/5 to-secondary/5">
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
-              <div className="text-center md:text-left">
-                <h2 className="text-2xl font-bold flex items-center gap-2">
-                  <span>Your Subscription</span>
-                  {subscription?.tier === 'premium' && (
-                    <Medal className="h-5 w-5 text-yellow-500" />
-                  )}
-                </h2>
-                <p className="text-lg font-medium text-primary">
-                  {subscription?.tier === 'premium' ? 'Premium Plan' : 'Free Plan'}
-                </p>
-                <div className="mt-1 text-muted-foreground text-sm">
-                  Subscription started on {subscription?.start_date ? new Date(subscription.start_date).toLocaleDateString() : 'N/A'}
-                </div>
-              </div>
-              
-              <Badge 
-                variant={subscription?.tier === 'premium' ? "default" : "outline"}
-                className={`px-4 py-1.5 text-base ${subscription?.tier === 'premium' ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white' : ''}`}
-              >
-                {subscription?.tier === 'premium' ? 'PREMIUM' : 'FREE'}
-              </Badge>
-            </div>
-            
-            {carStats && (
-              <div className="bg-background rounded-lg p-4 mb-6">
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="font-medium">Car Listing Usage</h3>
-                  <span className="font-medium">
-                    {carStats.current} / {carStats.limit === Infinity || carStats.limit > 999 ? "∞" : carStats.limit}
-                  </span>
-                </div>
-                
-                <Progress 
-                  value={carStats.limit === Infinity || carStats.limit > 999 
-                    ? 10 // Just show a small bit for unlimited
-                    : (carStats.current / carStats.limit) * 100} 
-                  className="h-2" 
-                />
-                
-                {carStats.tier === 'free' && carStats.current >= carStats.limit && (
-                  <div className="mt-2 text-sm text-destructive flex items-center">
-                    <AlertTriangle className="h-4 w-4 mr-1" />
-                    You've reached the maximum number of listings for the free tier.
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <CreditCard className="h-5 w-5" />
+          Subscription Management
+        </CardTitle>
+        <CardDescription>
+          Manage your subscription and listing allowances
+        </CardDescription>
+      </CardHeader>
       
-      {/* Plan Comparison */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-        {/* Free Plan */}
-        <Card className={`overflow-hidden ${subscription?.tier === 'free' ? 'border-primary border-2' : 'border'}`}>
-          {subscription?.tier === 'free' && (
-            <div className="bg-primary text-primary-foreground text-center py-1.5 text-sm font-medium">
-              Current Plan
+      <CardContent>
+        {/* Current Plan Info */}
+        <div className="space-y-4 mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-medium">Current Plan</h3>
+              <p className="text-sm text-muted-foreground">
+                {stats.isFreeTier ? "Free tier" : "Premium tier"}
+              </p>
             </div>
-          )}
-          <CardHeader className={subscription?.tier === 'free' ? '' : 'pt-10'}>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-xl">Free Plan</CardTitle>
-                <CardDescription>Basic features for small sellers</CardDescription>
+            <div className="flex items-center">
+              {stats.isActive ? (
+                <div className="flex items-center text-green-600">
+                  <CheckCircle className="h-5 w-5 mr-1" />
+                  <span>Active</span>
+                </div>
+              ) : (
+                <div className="flex items-center text-red-600">
+                  <XCircle className="h-5 w-5 mr-1" />
+                  <span>Inactive</span>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="rounded-lg border p-4">
+              <h4 className="text-sm font-medium mb-2">Listing Limit</h4>
+              <div className="flex items-center">
+                {stats.isFreeTier ? (
+                  <span className="text-2xl font-bold">3</span>
+                ) : (
+                  <Infinity className="h-7 w-7 text-primary" />
+                )}
               </div>
-              <CarFront className="h-10 w-10 text-muted-foreground/70" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-6">
-              <span className="text-3xl font-bold">$0</span>
-              <span className="text-muted-foreground ml-1">/month</span>
+              <p className="text-xs text-muted-foreground mt-1">
+                {stats.isFreeTier ? "Limited to 3 car listings" : "Unlimited car listings"}
+              </p>
             </div>
             
-            <ul className="space-y-3">
-              <li className="flex items-start">
-                <div className="bg-primary/10 p-1 rounded mr-3 mt-0.5">
-                  <CarFront className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <span className="font-medium">3 car listings</span>
-                  <p className="text-sm text-muted-foreground">Limited inventory display</p>
-                </div>
-              </li>
-              <li className="flex items-start">
-                <div className="bg-primary/10 p-1 rounded mr-3 mt-0.5">
-                  <MessageSquare className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <span className="font-medium">Basic messaging</span>
-                  <p className="text-sm text-muted-foreground">Connect with potential buyers</p>
-                </div>
-              </li>
-              <li className="flex items-start">
-                <div className="bg-muted p-1 rounded mr-3 mt-0.5">
-                  <Search className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <div>
-                  <span className="font-medium text-muted-foreground">Standard listing visibility</span>
-                  <p className="text-sm text-muted-foreground">Regular placement in search results</p>
-                </div>
-              </li>
-            </ul>
-          </CardContent>
-          <CardFooter className="flex flex-col">
-            {subscription?.tier === 'premium' ? (
-              <Button 
-                variant="outline" 
-                className="w-full"
-                disabled={cancelMutation.isPending}
-                onClick={() => cancelMutation.mutate()}
-              >
-                {cancelMutation.isPending && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                Downgrade to Free
-              </Button>
-            ) : (
-              <p className="text-sm text-center text-muted-foreground mb-4">
-                You are currently on the Free plan
+            <div className="rounded-lg border p-4">
+              <h4 className="text-sm font-medium mb-2">Current Listings</h4>
+              <span className="text-2xl font-bold">{stats.currentCars}</span>
+              <p className="text-xs text-muted-foreground mt-1">
+                {stats.canAddMore ? "You can add more listings" : "Reached limit on free tier"}
               </p>
-            )}
-          </CardFooter>
-        </Card>
-        
-        {/* Premium Plan */}
-        <Card className={`overflow-hidden ${subscription?.tier === 'premium' ? 'border-primary border-2' : 'border'}`}>
-          {subscription?.tier === 'premium' && (
-            <div className="bg-primary text-primary-foreground text-center py-1.5 text-sm font-medium">
-              Current Plan
-            </div>
-          )}
-          <CardHeader className={`${subscription?.tier === 'premium' ? '' : 'pt-10'} bg-gradient-to-r from-primary/10 to-secondary/10`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-xl">Premium Plan</CardTitle>
-                <CardDescription>Advanced features for serious sellers</CardDescription>
-              </div>
-              <Sparkles className="h-10 w-10 text-primary" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-6">
-              <span className="text-3xl font-bold">$19.99</span>
-              <span className="text-muted-foreground ml-1">/month</span>
             </div>
             
-            <ul className="space-y-3">
-              <li className="flex items-start">
-                <div className="bg-primary/20 p-1 rounded mr-3 mt-0.5">
-                  <CarFront className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <span className="font-medium">Unlimited car listings</span>
-                  <p className="text-sm text-muted-foreground">Showcase your entire inventory</p>
-                </div>
-              </li>
-              <li className="flex items-start">
-                <div className="bg-primary/20 p-1 rounded mr-3 mt-0.5">
-                  <Star className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <span className="font-medium">Featured placement</span>
-                  <p className="text-sm text-muted-foreground">Priority in search results</p>
-                </div>
-              </li>
-              <li className="flex items-start">
-                <div className="bg-primary/20 p-1 rounded mr-3 mt-0.5">
-                  <Zap className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <span className="font-medium">Enhanced showroom profile</span>
-                  <p className="text-sm text-muted-foreground">Attract more potential buyers</p>
-                </div>
-              </li>
-              <li className="flex items-start">
-                <div className="bg-primary/20 p-1 rounded mr-3 mt-0.5">
-                  <MessageSquare className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <span className="font-medium">Priority support</span>
-                  <p className="text-sm text-muted-foreground">Faster response time</p>
-                </div>
-              </li>
-            </ul>
-          </CardContent>
-          <CardFooter>
-            {subscription?.tier === 'premium' ? (
-              <p className="text-sm text-center w-full text-primary-foreground bg-primary/80 py-2 rounded-md">
-                You are enjoying all Premium features
+            <div className="rounded-lg border p-4">
+              <h4 className="text-sm font-medium mb-2">Remaining</h4>
+              <span className="text-2xl font-bold">
+                {stats.isFreeTier 
+                  ? Math.max(0, stats.carLimit! - stats.currentCars) 
+                  : "∞"}
+              </span>
+              <p className="text-xs text-muted-foreground mt-1">
+                {stats.isFreeTier ? "Available listing slots" : "Unlimited slots"}
               </p>
-            ) : (
-              <Button 
-                className="w-full bg-gradient-to-r from-primary to-primary/80"
-                disabled={upgradeMutation.isPending}
-                onClick={() => upgradeMutation.mutate()}
-              >
-                {upgradeMutation.isPending && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                <CreditCard className="mr-2 h-4 w-4" />
-                Upgrade to Premium
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
-      </div>
-      
-      {/* Payment Processing Section */}
-      {clientSecret && stripePromise && (
-        <div className="mt-8 max-w-2xl mx-auto">
-          <Card className="border-0 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-primary/10 to-secondary/10">
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Complete Your Subscription
-              </CardTitle>
-              <CardDescription>
-                Provide your payment details to upgrade to Premium
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <Elements stripe={stripePromise} options={{ clientSecret }}>
-                <PaymentForm onPaymentSuccess={handlePaymentSuccess} />
-              </Elements>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
-      )}
-    </>
+        
+        <Separator className="my-6" />
+        
+        {/* Subscription Plans */}
+        <div className="space-y-6">
+          <h3 className="text-lg font-medium">Available Plans</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Free Tier */}
+            <div className="relative rounded-lg border p-6">
+              {stats.isFreeTier && stats.isActive && (
+                <div className="absolute top-3 right-3 bg-primary text-xs text-primary-foreground px-2 py-1 rounded">
+                  Current Plan
+                </div>
+              )}
+              
+              <h4 className="text-lg font-bold mb-1">Free Tier</h4>
+              <p className="text-2xl font-bold mb-4">$0 <span className="text-sm font-normal text-muted-foreground">/month</span></p>
+              
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-start">
+                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span>Up to 3 car listings</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span>Basic showroom profile</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span>Message system access</span>
+                </li>
+                <li className="flex items-start">
+                  <XCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span className="text-muted-foreground">Featured listings</span>
+                </li>
+                <li className="flex items-start">
+                  <XCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span className="text-muted-foreground">Priority search ranking</span>
+                </li>
+              </ul>
+              
+              {stats.isFreeTier ? (
+                <Button disabled className="w-full">
+                  <BadgeCheck className="mr-2 h-4 w-4" />
+                  Current Plan
+                </Button>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => cancelSubscriptionMutation.mutate()}
+                  disabled={cancelSubscriptionMutation.isPending}
+                >
+                  {cancelSubscriptionMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Downgrade to Free
+                </Button>
+              )}
+            </div>
+            
+            {/* Premium Tier */}
+            <div className="relative rounded-lg border border-primary p-6 bg-primary/5">
+              {stats.isPremiumTier && stats.isActive && (
+                <div className="absolute top-3 right-3 bg-primary text-xs text-primary-foreground px-2 py-1 rounded">
+                  Current Plan
+                </div>
+              )}
+              
+              <h4 className="text-lg font-bold mb-1">Premium Tier</h4>
+              <p className="text-2xl font-bold mb-4">$19.99 <span className="text-sm font-normal text-muted-foreground">/month</span></p>
+              
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-start">
+                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span><strong>Unlimited</strong> car listings</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span>Enhanced showroom profile</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span>Message system access</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span>Featured listings</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span>Priority search ranking</span>
+                </li>
+              </ul>
+              
+              {stats.isPremiumTier ? (
+                <Button disabled className="w-full bg-primary hover:bg-primary">
+                  <BadgeCheck className="mr-2 h-4 w-4" />
+                  Current Plan
+                </Button>
+              ) : (
+                <Button 
+                  className="w-full"
+                  onClick={handleUpgradeToPremium}
+                >
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Upgrade to Premium
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
-}
+};
+
+export default SubscriptionContent;

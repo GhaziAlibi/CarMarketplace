@@ -17,11 +17,7 @@ import MessagesPage from "@/pages/messages-page";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminListings from "@/pages/admin/listings";
 import AdminUsers from "@/pages/admin/users";
-import SellerDashboard from "@/pages/seller/dashboard";
-import SellerAddListing from "@/pages/seller/add-listing";
-import SellerMessages from "@/pages/seller/messages";
-import SellerEditShowroom from "@/pages/seller/edit-showroom";
-import SellerSubscription from "@/pages/seller/subscription";
+import SellerDashboardPage from "@/pages/seller/dashboard-seller";
 import BuyerSavedCars from "@/pages/buyer/saved-cars";
 import BuyerMessages from "@/pages/buyer/messages";
 import { UserRole } from "@shared/schema";
@@ -43,14 +39,14 @@ function Router() {
       <ProtectedRoute path="/buyer/messages" component={BuyerMessages} roles={[UserRole.BUYER]} />
       
       {/* Seller Routes */}
-      <ProtectedRoute path="/seller/dashboard" component={SellerDashboard} roles={[UserRole.SELLER]} />
-      <ProtectedRoute path="/seller/listings" component={SellerDashboard} roles={[UserRole.SELLER]} />
-      <ProtectedRoute path="/seller/add-listing" component={SellerDashboard} roles={[UserRole.SELLER]} />
-      <ProtectedRoute path="/seller/messages" component={SellerDashboard} roles={[UserRole.SELLER]} />
-      <ProtectedRoute path="/seller/edit-showroom" component={SellerDashboard} roles={[UserRole.SELLER]} />
-      <ProtectedRoute path="/seller/subscription" component={SellerDashboard} roles={[UserRole.SELLER]} />
-      <ProtectedRoute path="/seller/account" component={SellerDashboard} roles={[UserRole.SELLER]} />
-      <ProtectedRoute path="/seller/edit-listing/:id" component={SellerDashboard} roles={[UserRole.SELLER]} />
+      <ProtectedRoute path="/seller/dashboard" component={SellerDashboardPage} roles={[UserRole.SELLER]} />
+      <ProtectedRoute path="/seller/listings" component={SellerDashboardPage} roles={[UserRole.SELLER]} />
+      <ProtectedRoute path="/seller/add-listing" component={SellerDashboardPage} roles={[UserRole.SELLER]} />
+      <ProtectedRoute path="/seller/messages" component={SellerDashboardPage} roles={[UserRole.SELLER]} />
+      <ProtectedRoute path="/seller/edit-showroom" component={SellerDashboardPage} roles={[UserRole.SELLER]} />
+      <ProtectedRoute path="/seller/subscription" component={SellerDashboardPage} roles={[UserRole.SELLER]} />
+      <ProtectedRoute path="/seller/account" component={SellerDashboardPage} roles={[UserRole.SELLER]} />
+      <ProtectedRoute path="/seller/edit-listing/:id" component={SellerDashboardPage} roles={[UserRole.SELLER]} />
       
       {/* Admin Routes */}
       <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} roles={[UserRole.ADMIN]} />
