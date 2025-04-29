@@ -85,7 +85,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Use direct SQL to avoid schema mismatches between code and database
       const result = await db.execute(sql`
-        SELECT id, username, password, email, role, created_at 
+        SELECT id, username, password, email, role, created_at, is_active 
         FROM users 
         WHERE id = ${id}
       `);
@@ -103,6 +103,7 @@ export class DatabaseStorage implements IStorage {
         name: userData.username, // Use username as name since name column doesn't exist
         phone: null,
         avatar: null,
+        isActive: userData.is_active !== false, // Default to true if is_active is null
         createdAt: userData.created_at
       } as User;
     } catch (error) {
@@ -115,7 +116,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Use direct SQL to avoid schema mismatches between code and database
       const result = await db.execute(sql`
-        SELECT id, username, password, email, role, created_at 
+        SELECT id, username, password, email, role, created_at, is_active 
         FROM users 
         WHERE username = ${username}
       `);
@@ -133,6 +134,7 @@ export class DatabaseStorage implements IStorage {
         name: userData.username, // Use username as name since name column doesn't exist
         phone: null,
         avatar: null,
+        isActive: userData.is_active !== false, // Default to true if is_active is null
         createdAt: userData.created_at
       } as User;
     } catch (error) {
@@ -145,7 +147,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Use direct SQL to avoid schema mismatches between code and database
       const result = await db.execute(sql`
-        SELECT id, username, password, email, role, created_at 
+        SELECT id, username, password, email, role, created_at, is_active 
         FROM users 
         WHERE email = ${email}
       `);
@@ -163,6 +165,7 @@ export class DatabaseStorage implements IStorage {
         name: userData.username, // Use username as name since name column doesn't exist
         phone: null,
         avatar: null,
+        isActive: userData.is_active !== false, // Default to true if is_active is null
         createdAt: userData.created_at
       } as User;
     } catch (error) {
@@ -178,9 +181,9 @@ export class DatabaseStorage implements IStorage {
       
       // Use direct SQL to ensure only valid fields are inserted
       const result = await db.execute(sql`
-        INSERT INTO users (username, password, email, role)
-        VALUES (${validUserData.username}, ${validUserData.password}, ${validUserData.email}, ${validUserData.role || 'buyer'})
-        RETURNING id, username, password, email, role, created_at
+        INSERT INTO users (username, password, email, role, is_active)
+        VALUES (${validUserData.username}, ${validUserData.password}, ${validUserData.email}, ${validUserData.role || 'buyer'}, TRUE)
+        RETURNING id, username, password, email, role, created_at, is_active
       `);
       
       if (result.rows.length === 0) {
@@ -198,6 +201,7 @@ export class DatabaseStorage implements IStorage {
         name: createdUser.username, // Use username as name
         phone: null,
         avatar: null,
+        isActive: true,
         createdAt: createdUser.created_at
       } as User;
     } catch (error) {
@@ -219,7 +223,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Use direct SQL to avoid schema mismatches between code and database
       const result = await db.execute(sql`
-        SELECT id, username, password, email, role, created_at 
+        SELECT id, username, password, email, role, created_at, is_active
         FROM users 
         ORDER BY id
       `);
@@ -234,6 +238,7 @@ export class DatabaseStorage implements IStorage {
         name: userData.username, // Use username as name since name column doesn't exist
         phone: null,
         avatar: null,
+        isActive: userData.is_active !== false, // Default to true if is_active is null
         createdAt: userData.created_at
       } as User));
     } catch (error) {
