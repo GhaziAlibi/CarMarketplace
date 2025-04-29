@@ -213,14 +213,58 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users);
+    try {
+      // Use direct SQL to avoid schema mismatches between code and database
+      const result = await db.execute(sql`
+        SELECT id, username, password, email, role, created_at 
+        FROM users 
+        ORDER BY id
+      `);
+      
+      // Map the result to match the expected User type with defaults for missing fields
+      return result.rows.map(userData => ({
+        id: userData.id,
+        username: userData.username,
+        password: userData.password,
+        email: userData.email,
+        role: userData.role,
+        name: userData.username, // Use username as name since name column doesn't exist
+        phone: null,
+        avatar: null,
+        createdAt: userData.created_at
+      } as User));
+    } catch (error) {
+      console.error('Error in getAllUsers:', error);
+      throw error;
+    }
   }
 
   async getUsersByRole(role: UserRole): Promise<User[]> {
-    return await db
-      .select()
-      .from(users)
-      .where(eq(users.role, role));
+    try {
+      // Use direct SQL to avoid schema mismatches between code and database
+      const result = await db.execute(sql`
+        SELECT id, username, password, email, role, created_at 
+        FROM users 
+        WHERE role = ${role}
+        ORDER BY id
+      `);
+      
+      // Map the result to match the expected User type with defaults for missing fields
+      return result.rows.map(userData => ({
+        id: userData.id,
+        username: userData.username,
+        password: userData.password,
+        email: userData.email,
+        role: userData.role,
+        name: userData.username, // Use username as name since name column doesn't exist
+        phone: null,
+        avatar: null,
+        createdAt: userData.created_at
+      } as User));
+    } catch (error) {
+      console.error('Error in getUsersByRole:', error);
+      throw error;
+    }
   }
 
   // Showroom operations
