@@ -17,6 +17,7 @@ import MessagesPage from "@/pages/messages-page";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminListings from "@/pages/admin/listings";
 import AdminUsers from "@/pages/admin/users";
+import AdminAddSeller from "@/pages/admin/add-seller";
 import SellerDashboardPage from "@/pages/seller/dashboard-seller";
 import BuyerSavedCars from "@/pages/buyer/saved-cars";
 import BuyerMessages from "@/pages/buyer/messages";
@@ -52,6 +53,7 @@ function Router() {
       <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} roles={[UserRole.ADMIN]} />
       <ProtectedRoute path="/admin/listings" component={AdminListings} roles={[UserRole.ADMIN]} />
       <ProtectedRoute path="/admin/users" component={AdminUsers} roles={[UserRole.ADMIN]} />
+      <ProtectedRoute path="/admin/add-seller" component={AdminAddSeller} roles={[UserRole.ADMIN]} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />

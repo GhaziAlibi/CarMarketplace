@@ -60,4 +60,5 @@ export const privateAdminRoutes: RouterConfig = {
       res.status(500).json({ error: error.message || "Failed to create seller account" });
     }
   });
+  }
 }
