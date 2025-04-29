@@ -5,7 +5,7 @@ import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { UserRole } from "@shared/schema";
+import { UserRole, User as UserType } from "@shared/schema";
 import {
   Table,
   TableBody,
@@ -59,8 +59,9 @@ import {
   RefreshCw,
   UserCog,
   ExternalLink,
-  User,
+  User as UserIcon,
   Mail,
+  Store
 } from "lucide-react";
 
 const AdminUsers: React.FC = () => {
@@ -75,7 +76,7 @@ const AdminUsers: React.FC = () => {
   
   // Fetch all users
   const { 
-    data: users = [], 
+    data: users = [] as any[], 
     isLoading, 
     isError, 
   } = useQuery({
@@ -108,12 +109,13 @@ const AdminUsers: React.FC = () => {
   
   // Filter users
   const filteredUsers = users.filter((user: any) => {
-    const matchesSearch = 
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.username.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = !searchQuery || (
+      (user.name && user.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (user.email && user.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (user.username && user.username.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
     
-    const matchesRole = !selectedRole || user.role === selectedRole;
+    const matchesRole = !selectedRole || selectedRole === 'all' || (user.role && user.role === selectedRole);
     
     return matchesSearch && matchesRole;
   });
@@ -139,13 +141,26 @@ const AdminUsers: React.FC = () => {
   };
   
   // Format date
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
+  const formatDate = (dateString: string | Date | null | undefined) => {
+    if (!dateString) return 'Unknown';
+    
+    try {
+      const date = new Date(dateString);
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return 'Invalid date';
+      }
+      
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Error';
+    }
   };
   
   return (
@@ -287,7 +302,9 @@ const AdminUsers: React.FC = () => {
                                 ${user.role === UserRole.BUYER ? 'bg-green-50 text-green-700' : ''}
                               `}
                             >
-                              {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                              {user.role && typeof user.role === 'string' 
+                                ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
+                                : 'Unknown'}
                             </Badge>
                           </TableCell>
                           <TableCell>{formatDate(user.createdAt)}</TableCell>
