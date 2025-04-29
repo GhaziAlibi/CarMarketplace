@@ -50,7 +50,11 @@ export function setupAuth(app: Express) {
     new LocalStrategy(async (username, password, done) => {
       try {
         const user = await storage.getUserByUsername(username);
-        if (!user || !(await comparePasswords(password, user.password))) {
+        
+        // Check if user exists, password is correct, and account is active
+        if (!user || 
+            !(await comparePasswords(password, user.password)) || 
+            user.isActive === false) {
           return done(null, false);
         } else {
           return done(null, user);
@@ -65,10 +69,12 @@ export function setupAuth(app: Express) {
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
-      if (!user) {
-        // If user not found, return false instead of throwing an error
+      
+      // If user not found or is inactive, return false instead of the user
+      if (!user || user.isActive === false) {
         return done(null, false);
       }
+      
       done(null, user);
     } catch (error) {
       console.error('Error deserializing user:', error);
@@ -135,9 +141,19 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err: any, user: any, info: any) => {
+    passport.authenticate("local", async (err: any, user: any, info: any) => {
       if (err) return next(err);
-      if (!user) return res.status(401).json({ error: "Invalid credentials" });
+      
+      // If authentication failed, check if it's because the account is disabled
+      if (!user) {
+        // Check specifically if this user exists but is disabled
+        const existingUser = await storage.getUserByUsername(req.body.username);
+        if (existingUser && existingUser.isActive === false) {
+          return res.status(403).json({ error: "Account disabled. Please contact an administrator." });
+        }
+        
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
       
       req.login(user, (err: any) => {
         if (err) return next(err);

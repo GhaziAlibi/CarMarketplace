@@ -1151,6 +1151,46 @@ export class MemStorage implements IStorage {
       (user) => user.role === role
     );
   }
+  
+  // Implementation of disableUser for memory storage
+  async disableUser(id: number): Promise<User | undefined> {
+    const user = this.usersMap.get(id);
+    if (!user) return undefined;
+    
+    const updatedUser = { ...user, isActive: false };
+    this.usersMap.set(id, updatedUser);
+    
+    // If the user is a seller, also set their showroom to draft
+    if (user.role === UserRole.SELLER) {
+      const showroom = Array.from(this.showroomsMap.values()).find(
+        s => s.userId === id
+      );
+      
+      if (showroom) {
+        const updatedShowroom = { ...showroom, status: ShowroomStatus.DRAFT };
+        this.showroomsMap.set(showroom.id, updatedShowroom);
+      }
+    }
+    
+    return updatedUser;
+  }
+  
+  // Implementation of enableUser for memory storage
+  async enableUser(id: number): Promise<User | undefined> {
+    const user = this.usersMap.get(id);
+    if (!user) return undefined;
+    
+    const updatedUser = { ...user, isActive: true };
+    this.usersMap.set(id, updatedUser);
+    return updatedUser;
+  }
+  
+  // Implementation of getActiveUsers for memory storage
+  async getActiveUsers(): Promise<User[]> {
+    return Array.from(this.usersMap.values()).filter(
+      user => user.isActive !== false
+    );
+  }
 
   // Showroom operations
   async getShowroom(id: number): Promise<Showroom | undefined> {
