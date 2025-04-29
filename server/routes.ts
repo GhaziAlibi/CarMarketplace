@@ -134,6 +134,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to get seller's showroom" });
     }
   });
+  
+  // Get showroom by user ID
+  app.get("/api/showrooms/user/:id", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+      
+      const showroom = await storage.getShowroomByUserId(userId);
+      
+      if (!showroom) {
+        return res.status(404).json({ error: "Showroom not found" });
+      }
+      
+      res.json(showroom);
+    } catch (error) {
+      console.error("Error getting showroom by user ID:", error);
+      res.status(500).json({ error: "Failed to get showroom by user ID" });
+    }
+  });
 
   app.put("/api/showrooms/:id", requireAuth, async (req, res) => {
     try {
