@@ -1,6 +1,6 @@
 import { Express } from "express";
 import { storage } from "../storage";
-import { requireAuth, requireAdmin, requireRole } from "../auth";
+import { requireAuth, requireAdmin, requireRole, hashPassword } from "../auth";
 import { UserRole } from "@shared/schema";
 import { RouterConfig } from "./types";
 
