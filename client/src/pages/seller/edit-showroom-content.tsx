@@ -84,8 +84,17 @@ const EditShowroomContent: React.FC<EditShowroomContentProps> = ({ showroom, isL
   // Debug info
   console.log("Edit showroom content received props:", { showroom, isLoading, isError });
   
+  // Default placeholder logo URL - use when blob URLs fail
+  const defaultLogoUrl = "/placeholder-logo.svg";
+  
+  // Handle blob URL errors by using the default
+  const handleImageError = () => {
+    console.log("Image failed to load, replacing with default");
+    setLogoPreview(defaultLogoUrl);
+  };
+  
   // Safely access properties with null checking
-  const logoFromShowroom = showroom && typeof showroom === 'object' && 'logo' in showroom ? showroom.logo : null;
+  const logoFromShowroom = showroom && typeof showroom === 'object' && 'logo' in showroom ? showroom.logo : defaultLogoUrl;
   const imagesFromShowroom = showroom && typeof showroom === 'object' && 'images' in showroom ? showroom.images || [] : [];
   
   const [logoPreview, setLogoPreview] = useState<string | null>(logoFromShowroom);
@@ -534,6 +543,8 @@ const EditShowroomContent: React.FC<EditShowroomContentProps> = ({ showroom, isL
                           src={logoPreview} 
                           alt="Showroom Logo" 
                           className="h-full w-full object-cover"
+                          onError={handleImageError}
+                          loading="eager"
                         />
                       ) : (
                         <div className="flex items-center justify-center h-full w-full bg-muted">
@@ -614,6 +625,11 @@ const EditShowroomContent: React.FC<EditShowroomContentProps> = ({ showroom, isL
                             src={url}
                             alt={`Showroom image ${index + 1}`}
                             className="h-24 w-full object-cover rounded-md"
+                            onError={(e) => {
+                              console.log("Gallery image failed to load", index);
+                              e.currentTarget.src = "/placeholder-logo.svg";
+                            }}
+                            loading="eager"
                           />
                           <button
                             type="button"

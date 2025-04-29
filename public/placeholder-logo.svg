@@ -1,0 +1,8 @@
+<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="200" fill="#f0f0f0"/>
+  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#888">No Image</text>
+  <path d="M40,140 L160,140 L160,60 L40,60 Z" fill="none" stroke="#888" stroke-width="2"/>
+  <path d="M70,100 A15,15 0 1 1 70,101 Z" fill="#888"/>
+  <path d="M65,120 C85,100 115,100 135,120 Z" fill="#888"/>
+  <path d="M120,95 L140,75 L140,95 Z" fill="#888"/>
+</svg>
