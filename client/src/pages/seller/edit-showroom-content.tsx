@@ -64,6 +64,7 @@ const showroomFormSchema = insertShowroomSchema.extend({
   openingHours: z.string().optional(),
   logo: z.any().optional(), 
   images: z.any().optional(),
+  status: z.enum(["draft", "published"]).default("published"),
 });
 
 type ShowroomFormValues = z.infer<typeof showroomFormSchema>;
