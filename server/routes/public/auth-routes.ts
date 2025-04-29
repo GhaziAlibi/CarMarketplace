@@ -7,12 +7,11 @@ import { RouterConfig } from "../types";
 
 export const publicAuthRoutes: RouterConfig = {
   registerRoutes: (app: Express) => {
-    // Get current user from session - public endpoint that returns user data or 401
-    app.get("/api/user", (req, res) => {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-      res.json(req.user);
-    });
+    // Note: All auth routes (/api/login, /api/logout, /api/register, /api/user) 
+    // are actually set up in setupAuth() function in auth.ts
+    // This file exists just for consistency with our route structure
     
-    // Note: actual login/logout/register endpoints are set up in setupAuth()
+    // We don't need to define any routes here since they're
+    // already handled by the setupAuth function
   }
 };
