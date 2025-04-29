@@ -80,9 +80,17 @@ const EditShowroomContent: React.FC<EditShowroomContentProps> = ({ showroom, isL
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("basic");
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(showroom?.logo || null);
+  
+  // Debug info
+  console.log("Edit showroom content received props:", { showroom, isLoading, isError });
+  
+  // Safely access properties with null checking
+  const logoFromShowroom = showroom && typeof showroom === 'object' && 'logo' in showroom ? showroom.logo : null;
+  const imagesFromShowroom = showroom && typeof showroom === 'object' && 'images' in showroom ? showroom.images || [] : [];
+  
+  const [logoPreview, setLogoPreview] = useState<string | null>(logoFromShowroom);
   const [coverFiles, setCoverFiles] = useState<File[]>([]);
-  const [coverPreviews, setCoverPreviews] = useState<string[]>(showroom?.images || []);
+  const [coverPreviews, setCoverPreviews] = useState<string[]>(imagesFromShowroom);
   
   // Default values for the form based on existing showroom data
   const form = useForm<ShowroomFormValues>({

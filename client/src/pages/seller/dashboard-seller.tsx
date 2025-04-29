@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import SellerLayout from "@/components/layout/seller-layout";
 import { useLocation } from "wouter";
 import DashboardContent from "./dashboard-content";
@@ -26,22 +26,31 @@ const SellerDashboard: React.FC = () => {
   } = useQuery({
     queryKey: [`/api/showrooms/user/${user?.id}`],
     enabled: !!user,
+    retry: 1, // Only retry once to avoid infinite loading on real errors
+  });
+  
+  // Log debug information
+  console.log("Dashboard seller component:", { 
+    user, 
+    showroom, 
+    isLoadingShowroom, 
+    isShowroomError 
   });
 
   // Fetch cars if showroom exists
   const { 
-    data: cars, 
+    data: cars = [], 
     isLoading: isLoadingCars 
-  } = useQuery({
+  } = useQuery<any[]>({
     queryKey: ['/api/cars'],
     enabled: !!showroom,
   });
 
   // Fetch messages for seller
   const { 
-    data: messages, 
+    data: messages = [], 
     isLoading: isLoadingMessages 
-  } = useQuery({
+  } = useQuery<any[]>({
     queryKey: ['/api/messages'],
     enabled: !!user,
   });
