@@ -10,6 +10,8 @@ export const privateUserRoutes: RouterConfig = {
     app.get("/api/users", requireAdmin, async (req, res) => {
       try {
         const users = await storage.getAllUsers();
+        console.log("getAllUsers result:", users);
+        
         // Remove passwords from response
         const usersWithoutPassword = users.map(user => {
           const { password, ...userWithoutPassword } = user;
@@ -17,6 +19,7 @@ export const privateUserRoutes: RouterConfig = {
         });
         res.json(usersWithoutPassword);
       } catch (error) {
+        console.error("Error in GET /api/users:", error);
         res.status(500).json({ error: "Failed to get users" });
       }
     });
