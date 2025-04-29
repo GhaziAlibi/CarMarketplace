@@ -62,7 +62,11 @@ import {
   ExternalLink,
   User as UserIcon,
   Mail,
-  Store
+  Store,
+  UserX,
+  UserCheck,
+  ShieldAlert,
+  Shield
 } from "lucide-react";
 
 const AdminUsers: React.FC = () => {
@@ -71,6 +75,8 @@ const AdminUsers: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<number | null>(null);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [userToChangeStatus, setUserToChangeStatus] = useState<{id: number, enable: boolean} | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const itemsPerPage = 10;
@@ -103,6 +109,52 @@ const AdminUsers: React.FC = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to delete user",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Enable user mutation
+  const enableUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      await apiRequest("POST", `/api/users/${userId}/enable`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({
+        title: "User Enabled",
+        description: "The user has been successfully enabled and can now access the system.",
+      });
+      setStatusDialogOpen(false);
+      setUserToChangeStatus(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to enable user",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Disable user mutation
+  const disableUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      await apiRequest("POST", `/api/users/${userId}/disable`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({
+        title: "User Disabled",
+        description: "The user has been successfully disabled and can no longer access the system.",
+      });
+      setStatusDialogOpen(false);
+      setUserToChangeStatus(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to disable user",
         variant: "destructive",
       });
     },
@@ -273,6 +325,7 @@ const AdminUsers: React.FC = () => {
                         <TableHead>Username</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Role</TableHead>
+                        <TableHead>Status</TableHead>
                         <TableHead>Joined</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
@@ -317,6 +370,22 @@ const AdminUsers: React.FC = () => {
                                 : 'Unknown'}
                             </Badge>
                           </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={user.isActive ? "outline" : "secondary"}
+                              className={`
+                                ${user.isActive 
+                                  ? 'bg-green-50 text-green-700' 
+                                  : 'bg-red-50 text-red-700'}
+                              `}
+                            >
+                              {user.isActive ? (
+                                <><Shield className="h-3 w-3 mr-1 inline" /> Active</>
+                              ) : (
+                                <><ShieldAlert className="h-3 w-3 mr-1 inline" /> Disabled</>
+                              )}
+                            </Badge>
+                          </TableCell>
                           <TableCell>{formatDate(user.createdAt)}</TableCell>
                           <TableCell className="text-right">
                             <DropdownMenu>
@@ -342,6 +411,36 @@ const AdminUsers: React.FC = () => {
                                     Edit User
                                   </Button>
                                 </DropdownMenuItem>
+                                
+                                {user.role !== UserRole.ADMIN && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    {user.isActive ? (
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          setUserToChangeStatus({ id: user.id, enable: false });
+                                          setStatusDialogOpen(true);
+                                        }}
+                                        className="text-amber-600"
+                                      >
+                                        <UserX className="h-4 w-4 mr-2" />
+                                        Disable User
+                                      </DropdownMenuItem>
+                                    ) : (
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          setUserToChangeStatus({ id: user.id, enable: true });
+                                          setStatusDialogOpen(true);
+                                        }}
+                                        className="text-green-600"
+                                      >
+                                        <UserCheck className="h-4 w-4 mr-2" />
+                                        Enable User
+                                      </DropdownMenuItem>
+                                    )}
+                                  </>
+                                )}
+                                
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={() => handleDelete(user.id)}
@@ -416,6 +515,53 @@ const AdminUsers: React.FC = () => {
                 <Trash2 className="h-4 w-4 mr-2" />
               )}
               Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Status Change Dialog */}
+      <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {userToChangeStatus?.enable ? "Enable User" : "Disable User"}
+            </DialogTitle>
+            <DialogDescription>
+              {userToChangeStatus?.enable ? (
+                <>
+                  Are you sure you want to enable this user? They will regain access to the system and their showroom will be visible to buyers.
+                </>
+              ) : (
+                <>
+                  Are you sure you want to disable this user? This will prevent them from accessing the system and hide their showroom from buyers.
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant={userToChangeStatus?.enable ? "default" : "secondary"}
+              onClick={() => {
+                if (userToChangeStatus?.enable) {
+                  enableUserMutation.mutate(userToChangeStatus.id);
+                } else if (userToChangeStatus) {
+                  disableUserMutation.mutate(userToChangeStatus.id);
+                }
+              }}
+              disabled={enableUserMutation.isPending || disableUserMutation.isPending}
+            >
+              {enableUserMutation.isPending || disableUserMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : userToChangeStatus?.enable ? (
+                <UserCheck className="h-4 w-4 mr-2" />
+              ) : (
+                <UserX className="h-4 w-4 mr-2" />
+              )}
+              {userToChangeStatus?.enable ? "Enable" : "Disable"}
             </Button>
           </DialogFooter>
         </DialogContent>
