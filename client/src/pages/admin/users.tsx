@@ -76,10 +76,10 @@ const AdminUsers: React.FC = () => {
   
   // Fetch all users
   const { 
-    data: users = [] as any[], 
+    data: users = [] as UserType[], 
     isLoading, 
     isError, 
-  } = useQuery({
+  } = useQuery<UserType[]>({
     queryKey: ["/api/users"],
   });
   
@@ -108,7 +108,7 @@ const AdminUsers: React.FC = () => {
   });
   
   // Filter users
-  const filteredUsers = users.filter((user: any) => {
+  const filteredUsers = (users || []).filter((user: UserType) => {
     const matchesSearch = !searchQuery || (
       (user.name && user.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (user.email && user.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -268,7 +268,7 @@ const AdminUsers: React.FC = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {paginatedUsers.map((user: any) => (
+                      {paginatedUsers.map((user: UserType) => (
                         <TableRow key={user.id}>
                           <TableCell>
                             <div className="flex items-center gap-3">
@@ -280,7 +280,7 @@ const AdminUsers: React.FC = () => {
                                     className="h-full w-full object-cover"
                                   />
                                 ) : (
-                                  <User className="h-5 w-5 text-gray-500" />
+                                  <UserIcon className="h-5 w-5 text-gray-500" />
                                 )}
                               </div>
                               <div className="font-medium">{user.name}</div>
