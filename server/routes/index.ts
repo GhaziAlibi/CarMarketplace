@@ -1,17 +1,12 @@
 import { Express } from "express";
-import { userRoutes } from "./user-routes";
-import { showroomRoutes } from "./showroom-routes";
-import { carRoutes } from "./car-routes";
-import { messageRoutes } from "./message-routes";
-import { favoriteRoutes } from "./favorite-routes";
-import { subscriptionRoutes } from "./subscription-routes";
+import { registerPublicRoutes } from "./public";
+import { registerPrivateRoutes } from "./private";
 
+// Register all routes for the application
 export function registerAllRoutes(app: Express): void {
-  // Register all route modules
-  userRoutes.registerRoutes(app);
-  showroomRoutes.registerRoutes(app);
-  carRoutes.registerRoutes(app);
-  messageRoutes.registerRoutes(app);
-  favoriteRoutes.registerRoutes(app);
-  subscriptionRoutes.registerRoutes(app);
+  // Register public routes first
+  registerPublicRoutes(app);
+  
+  // Then register private routes that require authentication
+  registerPrivateRoutes(app);
 }
