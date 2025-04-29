@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, requireAuth, requireRole, requireAdmin, hashPassword } from "./auth";
-import { UserRole, SubscriptionTier, insertCarSchema, insertShowroomSchema, insertMessageSchema, insertFavoriteSchema, carSearchSchema, insertSubscriptionSchema } from "@shared/schema";
+import { UserRole, SubscriptionTier, ShowroomStatus, insertCarSchema, insertShowroomSchema, insertMessageSchema, insertFavoriteSchema, carSearchSchema, insertSubscriptionSchema } from "@shared/schema";
 import Stripe from "stripe";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -99,6 +99,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const showroom = await storage.getShowroom(showroomId);
       
       if (!showroom) {
+        return res.status(404).json({ error: "Showroom not found" });
+      }
+      
+      // Only return published showrooms to non-admins and non-owners
+      const isAdmin = req.isAuthenticated() && req.user?.role === UserRole.ADMIN;
+      const isOwner = req.isAuthenticated() && req.user?.id === showroom.userId;
+      
+      if (showroom.status !== ShowroomStatus.PUBLISHED && !isAdmin && !isOwner) {
         return res.status(404).json({ error: "Showroom not found" });
       }
       
@@ -221,9 +229,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cars routes
   app.get("/api/cars", async (req, res) => {
     try {
-      const cars = await storage.getAllCars();
-      res.json(cars);
+      // Get all cars
+      const allCars = await storage.getAllCars();
+      
+      // If user is admin, return all cars
+      const isAdmin = req.isAuthenticated() && req.user?.role === UserRole.ADMIN;
+      if (isAdmin) {
+        return res.json(allCars);
+      }
+      
+      // For non-admin users, filter cars from published showrooms
+      const publishedShowrooms = await storage.getShowroomsByStatus(ShowroomStatus.PUBLISHED);
+      const publishedShowroomIds = publishedShowrooms.map(showroom => showroom.id);
+      
+      // If user is authenticated, add their own showroom regardless of status
+      if (req.isAuthenticated() && req.user) {
+        const userShowroom = await storage.getShowroomByUserId(req.user.id);
+        if (userShowroom && !publishedShowroomIds.includes(userShowroom.id)) {
+          publishedShowroomIds.push(userShowroom.id);
+        }
+      }
+      
+      // Filter cars to only include those from published showrooms or user's own showroom
+      const filteredCars = allCars.filter(car => publishedShowroomIds.includes(car.showroomId));
+      res.json(filteredCars);
     } catch (error) {
+      console.error('Error fetching cars:', error);
       res.status(500).json({ error: "Failed to get cars" });
     }
   });
@@ -231,9 +262,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/cars/featured", async (req, res) => {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
-      const featuredCars = await storage.getFeaturedCars(limit);
-      res.json(featuredCars);
+      const allFeaturedCars = await storage.getFeaturedCars(limit);
+      
+      // If user is admin, return all featured cars regardless of showroom status
+      const isAdmin = req.isAuthenticated() && req.user?.role === UserRole.ADMIN;
+      if (isAdmin) {
+        return res.json(allFeaturedCars);
+      }
+      
+      // For non-admin users, filter featured cars from published showrooms
+      const publishedShowrooms = await storage.getShowroomsByStatus(ShowroomStatus.PUBLISHED);
+      const publishedShowroomIds = publishedShowrooms.map(showroom => showroom.id);
+      
+      // If user is authenticated, add their own showroom regardless of status
+      if (req.isAuthenticated() && req.user) {
+        const userShowroom = await storage.getShowroomByUserId(req.user.id);
+        if (userShowroom && !publishedShowroomIds.includes(userShowroom.id)) {
+          publishedShowroomIds.push(userShowroom.id);
+        }
+      }
+      
+      // Filter featured cars to only include those from published showrooms
+      const filteredFeaturedCars = allFeaturedCars.filter(car => 
+        publishedShowroomIds.includes(car.showroomId)
+      );
+      
+      res.json(filteredFeaturedCars);
     } catch (error) {
+      console.error('Error fetching featured cars:', error);
       res.status(500).json({ error: "Failed to get featured cars" });
     }
   });
@@ -249,9 +305,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const cars = await storage.searchCars(parseResult.data);
-      res.json(cars);
+      // Get all matching cars
+      const allMatchingCars = await storage.searchCars(parseResult.data);
+      
+      // If user is admin, return all cars
+      const isAdmin = req.isAuthenticated() && req.user?.role === UserRole.ADMIN;
+      if (isAdmin) {
+        return res.json(allMatchingCars);
+      }
+      
+      // For non-admin users, filter cars from published showrooms
+      const publishedShowrooms = await storage.getShowroomsByStatus(ShowroomStatus.PUBLISHED);
+      const publishedShowroomIds = publishedShowrooms.map(showroom => showroom.id);
+      
+      // If user is authenticated, add their own showroom regardless of status
+      if (req.isAuthenticated() && req.user) {
+        const userShowroom = await storage.getShowroomByUserId(req.user.id);
+        if (userShowroom && !publishedShowroomIds.includes(userShowroom.id)) {
+          publishedShowroomIds.push(userShowroom.id);
+        }
+      }
+      
+      // Filter cars to only include those from published showrooms
+      const filteredCars = allMatchingCars.filter(car => 
+        publishedShowroomIds.includes(car.showroomId)
+      );
+      
+      res.json(filteredCars);
     } catch (error) {
+      console.error('Error searching cars:', error);
       res.status(500).json({ error: "Failed to search cars" });
     }
   });
@@ -271,6 +353,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Car not found" });
       }
       
+      // Check showroom status - only return cars from published showrooms unless admin or owner
+      const showroom = await storage.getShowroom(car.showroomId);
+      if (!showroom) {
+        return res.status(404).json({ error: "Car not found" });
+      }
+      
+      const isAdmin = req.isAuthenticated() && req.user?.role === UserRole.ADMIN;
+      const isOwner = req.isAuthenticated() && req.user?.id === showroom.userId;
+      
+      if (showroom.status !== ShowroomStatus.PUBLISHED && !isAdmin && !isOwner) {
+        return res.status(404).json({ error: "Car not found" });
+      }
+      
       res.json(car);
     } catch (error) {
       console.error('Error in GET /api/cars/:id route:', error);
@@ -284,6 +379,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const showroom = await storage.getShowroom(showroomId);
       
       if (!showroom) {
+        return res.status(404).json({ error: "Showroom not found" });
+      }
+      
+      // Only return cars from published showrooms to non-admins and non-owners
+      const isAdmin = req.isAuthenticated() && req.user?.role === UserRole.ADMIN;
+      const isOwner = req.isAuthenticated() && req.user?.id === showroom.userId;
+      
+      if (showroom.status !== ShowroomStatus.PUBLISHED && !isAdmin && !isOwner) {
         return res.status(404).json({ error: "Showroom not found" });
       }
       
@@ -433,9 +536,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get featured showrooms
   app.get("/api/showrooms/featured", async (req, res) => {
     try {
-      const featuredShowrooms = await storage.getFeaturedShowrooms();
-      res.json(featuredShowrooms);
+      const allFeaturedShowrooms = await storage.getFeaturedShowrooms();
+      
+      // If user is admin, return all featured showrooms regardless of status
+      const isAdmin = req.isAuthenticated() && req.user?.role === UserRole.ADMIN;
+      if (isAdmin) {
+        return res.json(allFeaturedShowrooms);
+      }
+      
+      // For non-admin users, filter to only published showrooms
+      const filteredShowrooms = allFeaturedShowrooms.filter(
+        showroom => showroom.status === ShowroomStatus.PUBLISHED
+      );
+      
+      res.json(filteredShowrooms);
     } catch (error: any) {
+      console.error('Error getting featured showrooms:', error);
       res.status(500).json({ message: error.message });
     }
   });
@@ -443,9 +559,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get total count of featured showrooms (for VIP section)
   app.get("/api/showrooms/featured/count", async (req, res) => {
     try {
-      const featuredShowrooms = await storage.getFeaturedShowrooms();
-      res.json({ count: featuredShowrooms.length });
+      const allFeaturedShowrooms = await storage.getFeaturedShowrooms();
+      
+      // If user is admin, return count of all featured showrooms regardless of status
+      const isAdmin = req.isAuthenticated() && req.user?.role === UserRole.ADMIN;
+      if (isAdmin) {
+        return res.json({ count: allFeaturedShowrooms.length });
+      }
+      
+      // For non-admin users, filter to only published showrooms
+      const filteredShowrooms = allFeaturedShowrooms.filter(
+        showroom => showroom.status === ShowroomStatus.PUBLISHED
+      );
+      
+      res.json({ count: filteredShowrooms.length });
     } catch (error: any) {
+      console.error('Error getting featured showrooms count:', error);
       res.status(500).json({ message: error.message });
     }
   });
