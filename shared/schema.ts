@@ -33,6 +33,12 @@ export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
 });
 
+// Define showroom status enum
+export enum ShowroomStatus {
+  DRAFT = "draft",
+  PUBLISHED = "published"
+}
+
 // Showroom table for sellers
 export const showrooms = pgTable("showrooms", {
   id: serial("id").primaryKey(),
@@ -51,6 +57,7 @@ export const showrooms = pgTable("showrooms", {
   isFeatured: boolean("is_featured").default(false),
   website: text("website"),
   openingHours: text("opening_hours"),
+  status: text("status").default(ShowroomStatus.DRAFT),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
