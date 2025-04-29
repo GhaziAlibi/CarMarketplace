@@ -51,15 +51,24 @@ const CarListingsPage: React.FC = () => {
   const { data: cars = [], isLoading, isError } = useQuery({
     queryKey: ["/api/cars/search", filters],
     queryFn: async ({ queryKey }) => {
-      const params = new URLSearchParams();
       const searchFilters = queryKey[1] as CarSearchParams;
       
-      // Add all non-empty filters to search params
+      // Create a clean filter object with only non-empty values
+      const cleanFilters: CarSearchParams = {};
       Object.entries(searchFilters).forEach(([key, value]) => {
-        if (value) params.append(key, value.toString());
+        if (value) cleanFilters[key as keyof CarSearchParams] = value;
       });
       
-      const res = await fetch(`/api/cars/search?${params.toString()}`);
+      // Make a POST request with the filters in the body
+      const res = await fetch('/api/cars/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(cleanFilters),
+        credentials: 'include'
+      });
+      
       if (!res.ok) throw new Error("Failed to fetch cars");
       return res.json();
     }
