@@ -133,7 +133,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "User already has a showroom" });
       }
       
-      const newShowroom = await storage.createShowroom(parseResult.data, req.user.id);
+      // Add default placeholder images if not provided
+      const showroomData = {
+        ...parseResult.data,
+        logo: parseResult.data.logo || "https://betterplaceholder.com/300x300?text=Showroom&bg_color=122B45&text_color=ffffff",
+        headerImage: parseResult.data.headerImage || "https://betterplaceholder.com/1200x400?text=Welcome&bg_color=122B45&text_color=ffffff"
+      };
+      
+      const newShowroom = await storage.createShowroom(showroomData, req.user.id);
       res.status(201).json(newShowroom);
     } catch (error) {
       res.status(500).json({ error: "Failed to create showroom" });
@@ -217,7 +224,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "You don't have permission to update this showroom" });
       }
       
-      const updatedShowroom = await storage.updateShowroom(showroomId, req.body);
+      // Handle empty logo or headerImage values by keeping existing values
+      const updateData = { ...req.body };
+      
+      // If logo is being set to empty string or null, maintain the existing logo
+      if (updateData.logo === "" || updateData.logo === null) {
+        updateData.logo = showroom.logo || "https://betterplaceholder.com/300x300?text=Showroom&bg_color=122B45&text_color=ffffff";
+      }
+      
+      // If headerImage is being set to empty string or null, maintain the existing headerImage
+      if (updateData.headerImage === "" || updateData.headerImage === null) {
+        updateData.headerImage = showroom.headerImage || "https://betterplaceholder.com/1200x400?text=Welcome&bg_color=122B45&text_color=ffffff";
+      }
+      
+      const updatedShowroom = await storage.updateShowroom(showroomId, updateData);
       console.log("Showroom updated successfully:", updatedShowroom);
       res.json(updatedShowroom);
     } catch (error) {
@@ -440,10 +460,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Create car with showroom ID
+      // Create car with showroom ID and default placeholder images if not provided
       const carData = {
         ...parseResult.data,
-        showroomId: showroom.id
+        showroomId: showroom.id,
+        images: parseResult.data.images && parseResult.data.images.length > 0 
+          ? parseResult.data.images 
+          : ["https://betterplaceholder.com/800x600?text=Car+Image&bg_color=122B45&text_color=ffffff"]
       };
       
       const newCar = await storage.createCar(carData);
@@ -474,7 +497,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "You don't have permission to update this car" });
       }
       
-      const updatedCar = await storage.updateCar(carId, req.body);
+      // Prepare update data, preserving placeholder images if necessary
+      const updateData = { ...req.body };
+      
+      // If images is being set to empty, use placeholder array
+      if (updateData.images && (
+          updateData.images.length === 0 || 
+          updateData.images.every((img: string) => img === "" || img === null)
+        )) {
+        updateData.images = car.images && car.images.length > 0 
+          ? car.images 
+          : ["https://betterplaceholder.com/800x600?text=Car+Image&bg_color=122B45&text_color=ffffff"];
+      }
+      
+      const updatedCar = await storage.updateCar(carId, updateData);
       res.json(updatedCar);
     } catch (error) {
       res.status(500).json({ error: "Failed to update car" });
