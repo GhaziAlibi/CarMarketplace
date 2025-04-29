@@ -40,13 +40,13 @@ const SellerDashboard: React.FC = () => {
     isShowroomError 
   });
 
-  // Fetch cars if showroom exists
+  // Fetch only this seller's cars if showroom exists
   const { 
     data: cars = [], 
     isLoading: isLoadingCars 
   } = useQuery<Car[]>({
-    queryKey: ['/api/cars'],
-    enabled: !!showroom,
+    queryKey: [`/api/showrooms/${showroom?.id}/cars`],
+    enabled: !!showroom && !!showroom.id,
   });
 
   // Fetch messages for seller
