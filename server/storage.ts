@@ -1,4 +1,4 @@
-import { users, type User, type InsertUser, UserRole, cars, type Car, type InsertCar, showrooms, type Showroom, type InsertShowroom, messages, type Message, type InsertMessage, favorites, type Favorite, type InsertFavorite, CarSearchParams, ShowroomStatus } from "@shared/schema";
+import { users, type User, type InsertUser, UserRole, cars, type Car, type InsertCar, showrooms, type Showroom, type InsertShowroom, messages, type Message, type InsertMessage, favorites, type Favorite, type InsertFavorite, CarSearchParams, ShowroomStatus, subscriptions, type Subscription, type InsertSubscription, SubscriptionTier } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import connectPg from "connect-pg-simple";
@@ -21,6 +21,9 @@ export interface IStorage {
   updateUser(id: number, userData: Partial<User>): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
   getUsersByRole(role: UserRole): Promise<User[]>;
+  disableUser(id: number): Promise<User | undefined>;
+  enableUser(id: number): Promise<User | undefined>;
+  getActiveUsers(): Promise<User[]>;
   
   // Showroom operations
   getShowroom(id: number): Promise<Showroom | undefined>;
@@ -243,7 +246,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Use direct SQL to avoid schema mismatches between code and database
       const result = await db.execute(sql`
-        SELECT id, username, password, email, role, created_at 
+        SELECT id, username, password, email, role, created_at, is_active
         FROM users 
         WHERE role = ${role}
         ORDER BY id
@@ -259,10 +262,101 @@ export class DatabaseStorage implements IStorage {
         name: userData.username, // Use username as name since name column doesn't exist
         phone: null,
         avatar: null,
+        isActive: userData.is_active !== false, // Default to true if missing
         createdAt: userData.created_at
       } as User));
     } catch (error) {
       console.error('Error in getUsersByRole:', error);
+      throw error;
+    }
+  }
+  
+  async disableUser(id: number): Promise<User | undefined> {
+    try {
+      // Use direct SQL to update the is_active field
+      const result = await db.execute(sql`
+        UPDATE users 
+        SET is_active = FALSE 
+        WHERE id = ${id}
+        RETURNING id, username, password, email, role, created_at, is_active
+      `);
+      
+      if (result.rows.length === 0) return undefined;
+      
+      const userData = result.rows[0];
+      return {
+        id: userData.id,
+        username: userData.username,
+        password: userData.password,
+        email: userData.email,
+        role: userData.role,
+        name: userData.username,
+        phone: null,
+        avatar: null,
+        isActive: false,
+        createdAt: userData.created_at
+      } as User;
+    } catch (error) {
+      console.error('Error in disableUser:', error);
+      return undefined;
+    }
+  }
+  
+  async enableUser(id: number): Promise<User | undefined> {
+    try {
+      // Use direct SQL to update the is_active field
+      const result = await db.execute(sql`
+        UPDATE users 
+        SET is_active = TRUE 
+        WHERE id = ${id}
+        RETURNING id, username, password, email, role, created_at, is_active
+      `);
+      
+      if (result.rows.length === 0) return undefined;
+      
+      const userData = result.rows[0];
+      return {
+        id: userData.id,
+        username: userData.username,
+        password: userData.password,
+        email: userData.email,
+        role: userData.role,
+        name: userData.username,
+        phone: null,
+        avatar: null,
+        isActive: true,
+        createdAt: userData.created_at
+      } as User;
+    } catch (error) {
+      console.error('Error in enableUser:', error);
+      return undefined;
+    }
+  }
+  
+  async getActiveUsers(): Promise<User[]> {
+    try {
+      // Use direct SQL to get only active users
+      const result = await db.execute(sql`
+        SELECT id, username, password, email, role, created_at, is_active
+        FROM users 
+        WHERE is_active = TRUE
+        ORDER BY id
+      `);
+      
+      return result.rows.map(userData => ({
+        id: userData.id,
+        username: userData.username,
+        password: userData.password,
+        email: userData.email,
+        role: userData.role,
+        name: userData.username,
+        phone: null,
+        avatar: null,
+        isActive: true,
+        createdAt: userData.created_at
+      } as User));
+    } catch (error) {
+      console.error('Error in getActiveUsers:', error);
       throw error;
     }
   }

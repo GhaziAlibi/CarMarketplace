@@ -25,12 +25,14 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   phone: text("phone"),
   avatar: text("avatar"),
+  isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
+  isActive: true,
 });
 
 // Define showroom status enum
