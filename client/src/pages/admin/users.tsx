@@ -61,7 +61,8 @@ import {
   ExternalLink,
   User as UserIcon,
   Mail,
-  Store
+  Store,
+  UserPlus
 } from "lucide-react";
 
 const AdminUsers: React.FC = () => {
@@ -177,6 +178,15 @@ const AdminUsers: React.FC = () => {
               </Link>
             </Button>
             <h1 className="text-2xl font-bold">Manage Users</h1>
+          </div>
+          
+          <div className="flex justify-between items-center mb-6">
+            <Button asChild variant="default">
+              <Link href="/admin/add-seller">
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add New Seller
+              </Link>
+            </Button>
           </div>
           
           <Card className="mb-8">
