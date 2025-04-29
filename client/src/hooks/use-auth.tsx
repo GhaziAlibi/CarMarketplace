@@ -64,11 +64,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
     onError: (error: Error) => {
-      toast({
-        title: "Login failed",
-        description: error.message || "Invalid username or password",
-        variant: "destructive",
-      });
+      // Check for disabled account
+      if ((error as any).status === 403) {
+        toast({
+          title: "Account Disabled",
+          description: error.message || "Your account has been disabled. Please contact an administrator.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Login failed",
+          description: error.message || "Invalid username or password",
+          variant: "destructive",
+        });
+      }
     },
   });
 
@@ -85,9 +94,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
     onError: (error: Error) => {
+      let title = "Registration failed";
+      let description = error.message || "Could not create account";
+      
+      // Provide helpful messages for common registration errors
+      if (error.message.includes("Username already exists")) {
+        title = "Username not available";
+        description = "This username is already taken. Please choose another one.";
+      } else if (error.message.includes("Email already exists")) {
+        title = "Email already registered";
+        description = "An account with this email already exists. Try logging in instead.";
+      } else if (error.message.includes("Validation Error")) {
+        title = "Invalid information";
+        description = "Please check your information and try again.";
+      }
+      
       toast({
-        title: "Registration failed",
-        description: error.message || "Could not create account",
+        title: title,
+        description: description,
         variant: "destructive",
       });
     },

@@ -129,10 +129,44 @@ interface LoginFormProps {
 const LoginForm: React.FC<LoginFormProps> = ({ isLoading, onSubmit }) => {
   const formConfig = useLoginForm();
   const form = useForm<z.infer<typeof loginSchema>>(formConfig);
+  const { loginMutation } = useAuth();
+  const [formError, setFormError] = useState<string | null>(null);
+  
+  // Watch for errors from the login mutation
+  useEffect(() => {
+    if (loginMutation.isError) {
+      const error = loginMutation.error as Error;
+      if ((error as any).status === 403) {
+        setFormError("Account disabled. Please contact an administrator.");
+      } else if (error.message) {
+        setFormError(error.message);
+      } else {
+        setFormError("Invalid username or password.");
+      }
+    } else {
+      setFormError(null);
+    }
+  }, [loginMutation.isError, loginMutation.error]);
+
+  const handleSubmit = (data: z.infer<typeof loginSchema>) => {
+    setFormError(null);
+    onSubmit(data);
+  };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        {formError && (
+          <div className="bg-destructive/10 text-destructive border border-destructive/20 rounded-md p-3 text-sm">
+            <div className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+              {formError}
+            </div>
+          </div>
+        )}
+      
         <FormField
           control={form.control}
           name="username"
@@ -190,11 +224,33 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onSubmit }) => {
   const form = useForm<
     z.infer<typeof insertUserSchema> & { confirmPassword: string }
   >(formConfig);
+  const { registerMutation } = useAuth();
+  const [formError, setFormError] = useState<string | null>(null);
+  
+  // Watch for errors from the registration mutation
+  useEffect(() => {
+    if (registerMutation.isError) {
+      const error = registerMutation.error as Error;
+      
+      if (error.message.includes("Username already exists")) {
+        setFormError("This username is already taken. Please choose another one.");
+      } else if (error.message.includes("Email already exists")) {
+        setFormError("An account with this email already exists. Try logging in instead.");
+      } else if (error.message) {
+        setFormError(error.message);
+      } else {
+        setFormError("Could not create account. Please try again.");
+      }
+    } else {
+      setFormError(null);
+    }
+  }, [registerMutation.isError, registerMutation.error]);
 
   const handleSubmit = (
     data: z.infer<typeof insertUserSchema> & { confirmPassword: string },
   ) => {
     // Remove confirmPassword before submitting
+    setFormError(null);
     const { confirmPassword, ...registerData } = data;
     onSubmit(registerData);
   };
@@ -202,6 +258,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onSubmit }) => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        {formError && (
+          <div className="bg-destructive/10 text-destructive border border-destructive/20 rounded-md p-3 text-sm">
+            <div className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+              {formError}
+            </div>
+          </div>
+        )}
+      
         <FormField
           control={form.control}
           name="name"
