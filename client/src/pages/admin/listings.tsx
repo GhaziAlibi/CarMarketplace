@@ -430,7 +430,7 @@ const AdminListings: React.FC = () => {
                                 ${car.status === 'pending' ? 'bg-amber-50 text-amber-700' : ''}
                               `}
                             >
-                              {car.status.charAt(0).toUpperCase() + car.status.slice(1)}
+                              {car.status ? car.status.charAt(0).toUpperCase() + car.status.slice(1) : 'N/A'}
                             </Badge>
                           </TableCell>
                           <TableCell>

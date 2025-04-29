@@ -32,14 +32,14 @@ const AuthPage: React.FC = () => {
   const [location, navigate] = useLocation();
   const { user, loginMutation, registerMutation } = useAuth();
   const [tab, setTab] = useState("login");
-  
+
   // Use useEffect to handle redirection after render
   useEffect(() => {
     if (user) {
       navigate("/");
     }
   }, [user, navigate]);
-  
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Left column - Auth forms */}
@@ -50,33 +50,46 @@ const AuthPage: React.FC = () => {
               Auto<span className="text-accent">Market</span>
             </h2>
             <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-              {tab === "login" ? "Sign in to your account" : "Create an account"}
+              {tab === "login"
+                ? "Sign in to your account"
+                : "Create an account"}
             </h2>
           </div>
 
-          <Tabs defaultValue="login" value={tab} onValueChange={setTab} className="w-full">
+          <Tabs
+            defaultValue="login"
+            value={tab}
+            onValueChange={setTab}
+            className="w-full"
+          >
             <TabsList className="grid w-full grid-cols-2 mb-8">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="register">Register</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="login">
-              <LoginForm isLoading={loginMutation.isPending} onSubmit={loginMutation.mutate} />
+              <LoginForm
+                isLoading={loginMutation.isPending}
+                onSubmit={loginMutation.mutate}
+              />
             </TabsContent>
-            
+
             <TabsContent value="register">
-              <RegisterForm isLoading={registerMutation.isPending} onSubmit={registerMutation.mutate} />
+              <RegisterForm
+                isLoading={registerMutation.isPending}
+                onSubmit={registerMutation.mutate}
+              />
             </TabsContent>
           </Tabs>
         </div>
       </div>
-      
+
       {/* Right column - Hero section */}
       <div className="hidden lg:block relative w-0 flex-1">
         <div className="absolute inset-0">
           <img
             className="h-full w-full object-cover"
-            src="https://images.unsplash.com/photo-1573044718732-4a1342b7c8a4?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
+            src="https://images.unsplash.com/photo-1744042246407-f216e4aa80de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
             alt="Luxury car showroom"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-primary to-transparent opacity-60"></div>
@@ -86,7 +99,8 @@ const AuthPage: React.FC = () => {
             Join the Premium Car Marketplace
           </h1>
           <p className="mt-4 text-lg text-white">
-            Connect with luxury car showrooms, find your dream vehicle, and enjoy a seamless buying experience.
+            Connect with luxury car showrooms, find your dream vehicle, and
+            enjoy a seamless buying experience.
           </p>
           <div className="mt-8">
             <div className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-primary bg-white">
@@ -124,7 +138,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ isLoading, onSubmit }) => {
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="password"
@@ -132,13 +146,17 @@ const LoginForm: React.FC<LoginFormProps> = ({ isLoading, onSubmit }) => {
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="Enter your password" {...field} />
+                <Input
+                  type="password"
+                  placeholder="Enter your password"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        
+
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? (
             <>
@@ -161,9 +179,13 @@ interface RegisterFormProps {
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onSubmit }) => {
   const formConfig = useRegisterForm();
-  const form = useForm<z.infer<typeof insertUserSchema> & { confirmPassword: string }>(formConfig);
-  
-  const handleSubmit = (data: z.infer<typeof insertUserSchema> & { confirmPassword: string }) => {
+  const form = useForm<
+    z.infer<typeof insertUserSchema> & { confirmPassword: string }
+  >(formConfig);
+
+  const handleSubmit = (
+    data: z.infer<typeof insertUserSchema> & { confirmPassword: string },
+  ) => {
     // Remove confirmPassword before submitting
     const { confirmPassword, ...registerData } = data;
     onSubmit(registerData);
@@ -185,7 +207,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onSubmit }) => {
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="username"
@@ -199,7 +221,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onSubmit }) => {
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="email"
@@ -213,7 +235,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onSubmit }) => {
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="password"
@@ -221,13 +243,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onSubmit }) => {
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="Create a password" {...field} />
+                <Input
+                  type="password"
+                  placeholder="Create a password"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="confirmPassword"
@@ -235,13 +261,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onSubmit }) => {
             <FormItem>
               <FormLabel>Confirm Password</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="Confirm your password" {...field} />
+                <Input
+                  type="password"
+                  placeholder="Confirm your password"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="role"
@@ -276,7 +306,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onSubmit }) => {
             </FormItem>
           )}
         />
-        
+
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? (
             <>

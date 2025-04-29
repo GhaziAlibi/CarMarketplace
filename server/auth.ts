@@ -1,6 +1,6 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Express } from "express";
+import { Express, Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
@@ -135,11 +135,11 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) return next(err);
       if (!user) return res.status(401).json({ error: "Invalid credentials" });
       
-      req.login(user, (err) => {
+      req.login(user, (err: any) => {
         if (err) return next(err);
         // Don't send password back to client
         const { password, ...userWithoutPassword } = user;
@@ -163,7 +163,7 @@ export function setupAuth(app: Express) {
   });
 }
 
-export function requireAuth(req: Express.Request, res: Express.Response, next: Express.NextFunction) {
+export function requireAuth(req: Request, res: Response, next: NextFunction) {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ error: "Authentication required" });
   }
@@ -171,7 +171,7 @@ export function requireAuth(req: Express.Request, res: Express.Response, next: E
 }
 
 export function requireRole(role: UserRole) {
-  return (req: Express.Request, res: Express.Response, next: Express.NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Authentication required" });
     }
@@ -184,7 +184,7 @@ export function requireRole(role: UserRole) {
   };
 }
 
-export function requireAdmin(req: Express.Request, res: Express.Response, next: Express.NextFunction) {
+export function requireAdmin(req: Request, res: Response, next: NextFunction) {
   if (!req.isAuthenticated() || req.user.role !== UserRole.ADMIN) {
     return res.status(403).json({ error: "Admin access required" });
   }
