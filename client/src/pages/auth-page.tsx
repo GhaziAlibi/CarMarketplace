@@ -75,6 +75,14 @@ const AuthPage: React.FC = () => {
             </TabsContent>
 
             <TabsContent value="register">
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4 text-sm text-blue-700">
+                <p className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  Note: Seller accounts can only be created by system administrators. Please contact admin if you need a seller account.
+                </p>
+              </div>
               <RegisterForm
                 isLoading={registerMutation.isPending}
                 onSubmit={registerMutation.mutate}
@@ -292,12 +300,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onSubmit }) => {
                       Buyer - I want to browse and purchase vehicles
                     </FormLabel>
                   </FormItem>
-                  <FormItem className="flex items-center space-x-3 space-y-0">
+                  {/* Seller registration disabled - only admins can create seller accounts */}
+                  <FormItem className="flex items-center space-x-3 space-y-0 opacity-50">
                     <FormControl>
-                      <RadioGroupItem value={UserRole.SELLER} />
+                      <RadioGroupItem value={UserRole.SELLER} disabled />
                     </FormControl>
                     <FormLabel className="font-normal">
-                      Seller - I want to list vehicles for sale
+                      Seller - Contact admin to create a seller account
                     </FormLabel>
                   </FormItem>
                 </RadioGroup>

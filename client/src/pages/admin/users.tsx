@@ -58,11 +58,11 @@ import {
   Users,
   RefreshCw,
   UserCog,
+  UserPlus,
   ExternalLink,
   User as UserIcon,
   Mail,
-  Store,
-  UserPlus
+  Store
 } from "lucide-react";
 
 const AdminUsers: React.FC = () => {
