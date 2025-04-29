@@ -1,4 +1,4 @@
-import { users, type User, type InsertUser, UserRole, cars, type Car, type InsertCar, showrooms, type Showroom, type InsertShowroom, messages, type Message, type InsertMessage, favorites, type Favorite, type InsertFavorite, CarSearchParams } from "@shared/schema";
+import { users, type User, type InsertUser, UserRole, cars, type Car, type InsertCar, showrooms, type Showroom, type InsertShowroom, messages, type Message, type InsertMessage, favorites, type Favorite, type InsertFavorite, CarSearchParams, ShowroomStatus } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import connectPg from "connect-pg-simple";
@@ -29,6 +29,7 @@ export interface IStorage {
   updateShowroom(id: number, showroomData: Partial<Showroom>): Promise<Showroom | undefined>;
   getAllShowrooms(): Promise<Showroom[]>;
   getFeaturedShowrooms(): Promise<Showroom[]>;
+  getShowroomsByStatus(status: ShowroomStatus): Promise<Showroom[]>;
   
   // Car operations
   getCar(id: number): Promise<Car | undefined>;
@@ -271,6 +272,13 @@ export class DatabaseStorage implements IStorage {
       .from(showrooms)
       .where(eq(showrooms.isFeatured, true))
       .limit(4); // Max 4 VIP showrooms
+  }
+  
+  async getShowroomsByStatus(status: ShowroomStatus): Promise<Showroom[]> {
+    return await db
+      .select()
+      .from(showrooms)
+      .where(eq(showrooms.status, status));
   }
 
   // Car operations
@@ -1043,6 +1051,11 @@ export class MemStorage implements IStorage {
     return Array.from(this.showroomsMap.values())
       .filter(showroom => showroom.isFeatured)
       .slice(0, 4); // Limit to 4 featured showrooms
+  }
+  
+  async getShowroomsByStatus(status: ShowroomStatus): Promise<Showroom[]> {
+    return Array.from(this.showroomsMap.values())
+      .filter(showroom => showroom.status === status);
   }
 
   // Car operations

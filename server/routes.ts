@@ -74,9 +74,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Showroom routes
   app.get("/api/showrooms", async (req, res) => {
     try {
-      const showrooms = await storage.getAllShowrooms();
+      // Filter showrooms that are published unless user is admin
+      const isAdmin = req.isAuthenticated() && req.user?.role === UserRole.ADMIN;
+      
+      let showrooms;
+      if (isAdmin) {
+        // Admins can see all showrooms
+        showrooms = await storage.getAllShowrooms();
+      } else {
+        // Public users can only see published showrooms
+        showrooms = await storage.getShowroomsByStatus(ShowroomStatus.PUBLISHED);
+      }
+      
       res.json(showrooms);
     } catch (error) {
+      console.error("Error fetching showrooms:", error);
       res.status(500).json({ error: "Failed to get showrooms" });
     }
   });
