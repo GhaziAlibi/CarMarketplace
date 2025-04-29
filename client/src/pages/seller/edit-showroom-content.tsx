@@ -117,6 +117,7 @@ const EditShowroomContent: React.FC<EditShowroomContentProps> = ({ showroom, isL
       email: showroom?.email || user?.email || "",
       website: showroom?.website || "",
       openingHours: showroom?.openingHours || "",
+      status: showroom?.status || "published",
     }
   });
 
@@ -340,6 +341,34 @@ const EditShowroomContent: React.FC<EditShowroomContentProps> = ({ showroom, isL
                       </FormControl>
                       <FormDescription>
                         List your business hours for potential customers
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Showroom Status</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select showroom visibility" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="published">Published (visible to public)</SelectItem>
+                          <SelectItem value="draft">Draft (hidden from public)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Control the visibility of your showroom and its listings to the public
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
