@@ -91,6 +91,9 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
     queryKey: [`/api/users/${userId}`],
     enabled: !!userId && open,
   });
+  
+  // Log user data for debugging
+  console.log("User data fetched:", userData, "userId:", userId, "isUserError:", isUserError);
 
   // Fetch user's subscription
   const {
@@ -221,50 +224,54 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : isUserError || !userData ? (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>Failed to load user data.</AlertDescription>
-          </Alert>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* User Info Card */}
             <div className="md:col-span-1">
               <Card>
                 <CardContent className="space-y-4 pt-6">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Username</p>
-                    <p>{userData.username}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Name</p>
-                    <p>{userData.name}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Email</p>
-                    <p>{userData.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Role</p>
-                    <p className="capitalize">{userData.role}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Status</p>
-                    <div className="flex items-center">
-                      {userData.isActive ? (
-                        <>
-                          <span className="h-2 w-2 bg-green-500 rounded-full mr-2"></span>
-                          <span>Active</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="h-2 w-2 bg-red-500 rounded-full mr-2"></span>
-                          <span>Disabled</span>
-                        </>
-                      )}
+                  {userData && (
+                    <>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Username</p>
+                        <p>{userData?.username || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Name</p>
+                        <p>{userData?.name || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Email</p>
+                        <p>{userData?.email || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Role</p>
+                        <p className="capitalize">{userData?.role || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Status</p>
+                        <div className="flex items-center">
+                          {userData?.isActive ? (
+                            <>
+                              <span className="h-2 w-2 bg-green-500 rounded-full mr-2"></span>
+                              <span>Active</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="h-2 w-2 bg-red-500 rounded-full mr-2"></span>
+                              <span>Disabled</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  {!userData && (
+                    <div className="py-4 text-center">
+                      <AlertCircle className="h-6 w-6 text-yellow-500 mx-auto mb-2" />
+                      <p>Loading user data...</p>
                     </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
 

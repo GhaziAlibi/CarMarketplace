@@ -419,6 +419,8 @@ const AdminUsers: React.FC = () => {
                                 {user.role === UserRole.SELLER && (
                                   <DropdownMenuItem
                                     onClick={() => {
+                                      // Log the user ID for debugging
+                                      console.log("Opening subscription dialog for user ID:", user.id);
                                       setUserIdForSubscription(user.id);
                                       setSubscriptionDialogOpen(true);
                                     }}
