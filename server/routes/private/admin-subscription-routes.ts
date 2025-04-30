@@ -81,12 +81,18 @@ export const privateAdminSubscriptionRoutes: RouterConfig = {
         }
         
         // Prepare data for update
-        const subscriptionData: any = { tier };
+        const subscriptionData: any = {};
+        if (tier !== undefined) {
+          subscriptionData.tier = tier;
+        }
         
         // Handle optional fields
         if (active !== undefined) {
           subscriptionData.active = active;
         }
+        
+        console.log("Request body received:", req.body);
+        console.log("Subscription data to update:", subscriptionData);
         
         if (startDateStr) {
           try {

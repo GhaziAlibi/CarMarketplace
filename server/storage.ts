@@ -1019,12 +1019,17 @@ export class DatabaseStorage implements IStorage {
       // Add the subscription ID to the params
       params.push(id);
       
-      const result = await db.execute(`
+      const sql = `
         UPDATE subscriptions 
         SET ${setValues.join(', ')}
         WHERE id = $${paramCounter}
         RETURNING *
-      `, params);
+      `;
+      
+      console.log("Executing SQL:", sql);
+      console.log("With params:", params);
+      
+      const result = await db.execute(sql, params);
       
       if (result.rows.length === 0) return undefined;
       
