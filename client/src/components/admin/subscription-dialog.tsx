@@ -141,7 +141,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
     if (subscription) {
       form.reset({
         tier: subscription.tier as SubscriptionTier,
-        status: subscription.status || 'active',
+        status: subscription.status === 'active' ? 'active' : 'inactive',
         listingLimit: subscription.listingLimit || (subscription.tier === SubscriptionTier.FREE ? 3 : null),
         startDate: subscription.startDate ? new Date(subscription.startDate) : new Date(),
         endDate: subscription.endDate ? new Date(subscription.endDate) : null,
@@ -367,25 +367,62 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                         )}
                       />
 
-                      {/* Active Status */}
+                      {/* Status */}
                       <FormField
                         control={form.control}
-                        name="active"
+                        name="status"
                         render={({ field }) => (
-                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                          <FormItem>
+                            <FormLabel>Subscription Status</FormLabel>
+                            <Select
+                              value={field.value}
+                              onValueChange={field.onChange}
+                              disabled={submitting}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select subscription status" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="active">Active</SelectItem>
+                                <SelectItem value="inactive">Inactive</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormDescription>
+                              Inactive subscriptions don't provide benefits to the user
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      {/* Listing Limit */}
+                      <FormField
+                        control={form.control}
+                        name="listingLimit"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Listing Limit</FormLabel>
                             <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                disabled={submitting}
+                              <input
+                                type="number"
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                value={field.value === null ? "" : field.value}
+                                onChange={(e) => {
+                                  const value = e.target.value === "" ? null : parseInt(e.target.value, 10);
+                                  field.onChange(value);
+                                }}
+                                disabled={submitting || form.watch("tier") !== SubscriptionTier.FREE}
+                                min={1}
                               />
                             </FormControl>
-                            <div className="space-y-1 leading-none">
-                              <FormLabel>Subscription Active</FormLabel>
-                              <FormDescription>
-                                Deactivating will disable subscription benefits
-                              </FormDescription>
-                            </div>
+                            <FormDescription>
+                              {form.watch("tier") === SubscriptionTier.FREE 
+                                ? "Number of car listings allowed (e.g., 3 for free plan)" 
+                                : "Premium and VIP plans have unlimited listings"}
+                            </FormDescription>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
