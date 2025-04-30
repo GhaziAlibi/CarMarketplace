@@ -892,9 +892,9 @@ export class DatabaseStorage implements IStorage {
         endDate: sub.end_date,
         stripeCustomerId: sub.stripe_customer_id,
         stripeSubscriptionId: sub.stripe_subscription_id,
-        active: sub.status === "active",
         createdAt: sub.created_at,
-        updatedAt: sub.updated_at
+        status: sub.status,
+        listingLimit: sub.listing_limit,
       } as Subscription;
     } catch (error) {
       console.error('Error in getSubscription:', error);
