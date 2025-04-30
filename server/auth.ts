@@ -201,7 +201,12 @@ export function requireRole(role: UserRole) {
 }
 
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  if (!req.isAuthenticated() || req.user.role !== UserRole.ADMIN) {
+  console.log("Admin check - isAuthenticated:", req.isAuthenticated());
+  console.log("Admin check - user:", req.user);
+  console.log("Admin check - user role:", req.user?.role);
+  console.log("Admin check - is admin:", req.user?.role === UserRole.ADMIN);
+  
+  if (!req.isAuthenticated() || req.user?.role !== UserRole.ADMIN) {
     return res.status(403).json({ error: "Admin access required" });
   }
   next();
