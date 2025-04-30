@@ -11,7 +11,7 @@ COPY package*.json ./
 RUN npm install
 
 # Install necessary utilities
-RUN apk add --no-cache git
+RUN apk add --no-cache git postgresql-client
 
 # Copy necessary configuration files
 COPY tsconfig.json ./
@@ -20,7 +20,6 @@ COPY drizzle.config.ts ./
 COPY tailwind.config.ts ./
 COPY postcss.config.js ./
 COPY components.json ./
-
 # Create directories for mounted volumes
 RUN mkdir -p client server shared
 
