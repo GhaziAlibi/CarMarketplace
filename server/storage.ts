@@ -923,9 +923,10 @@ export class DatabaseStorage implements IStorage {
         endDate: sub.end_date,
         stripeCustomerId: sub.stripe_customer_id,
         stripeSubscriptionId: sub.stripe_subscription_id,
-        active: sub.status === "active",
+        status: sub.status,
+        listingLimit: sub.listing_limit,
         createdAt: sub.created_at,
-        updatedAt: sub.updated_at
+        
       } as Subscription;
     } catch (error) {
       console.error('Error in getSubscriptionByUserId:', error);
@@ -1051,9 +1052,10 @@ export class DatabaseStorage implements IStorage {
         endDate: sub.end_date,
         stripeCustomerId: sub.stripe_customer_id,
         stripeSubscriptionId: sub.stripe_subscription_id,
-        active: sub.status === "active",
+        status: sub.status,
+        listingLimit: sub.listing_limit,
         createdAt: sub.created_at,
-        updatedAt: sub.updated_at
+        
       } as Subscription;
     } catch (error) {
       console.error('Error in updateSubscription:', error);
