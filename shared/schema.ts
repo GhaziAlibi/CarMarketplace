@@ -136,19 +136,18 @@ export const subscriptions = pgTable("subscriptions", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
   tier: text("tier").notNull().default(SubscriptionTier.FREE),
+  status: text("status").default("active"), // 'active' or 'inactive'
+  listingLimit: integer("listing_limit").default(3),
   startDate: timestamp("start_date").defaultNow(),
   endDate: timestamp("end_date"),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
-  active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({
   id: true,
   createdAt: true,
-  updatedAt: true,
 });
 
 // Types for ORM
