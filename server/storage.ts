@@ -1018,7 +1018,10 @@ export class DatabaseStorage implements IStorage {
       }
       
       if (subscriptionData.active !== undefined) {
-        updates.push(`active = ${subscriptionData.active}`);
+        // The column in the database is actually called "status", not "active"
+        // Convert boolean to "active"/"inactive"
+        const statusValue = subscriptionData.active ? 'active' : 'inactive';
+        updates.push(`status = '${statusValue}'`);
       }
       
       // Always update the timestamp
@@ -1048,7 +1051,7 @@ export class DatabaseStorage implements IStorage {
         endDate: sub.end_date,
         stripeCustomerId: sub.stripe_customer_id,
         stripeSubscriptionId: sub.stripe_subscription_id,
-        active: sub.active,
+        active: sub.status === "active",
         createdAt: sub.created_at,
         updatedAt: sub.updated_at
       } as Subscription;
@@ -1062,7 +1065,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await db.execute(sql`
         UPDATE subscriptions
-        SET active = false, end_date = NOW(), updated_at = NOW()
+        SET status = 'inactive', end_date = NOW(), updated_at = NOW()
         WHERE id = ${id}
         RETURNING id
       `);
