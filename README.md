@@ -50,7 +50,11 @@ A comprehensive multi-vendor car marketplace platform connecting buyers with sel
    ```
 7. Start the development server:
    ```
+   # Using npm
    npm run dev
+
+   # On Windows, you can also use the batch file
+   dev.bat
    ```
 8. Access the application at http://localhost:5000
 
@@ -90,6 +94,15 @@ For debugging the Node.js server:
    - Select "Debug Node.js" from the dropdown menu
    - Click the green play button or press F5 to start debugging
 
+   Alternatively, you can use the debug script:
+   ```
+   # Using npm
+   npm run debug
+
+   # On Windows, you can also use the batch file
+   debug.bat
+   ```
+
 3. Set breakpoints in your code and VSCode will pause execution at those points
 
 4. Use the debug toolbar to step through code, inspect variables, and more
@@ -101,7 +114,9 @@ These can be set in your `.env` file:
 - `DATABASE_URL`: PostgreSQL connection string
 - `SESSION_SECRET`: Secret key for session encryption
 - `NODE_ENV`: Node.js environment (production, development)
-- `HOST`: Host to bind the server to (default: 0.0.0.0)
+- `HOST`: Host to bind the server to
+  - On Windows: Use `127.0.0.1` (localhost)
+  - On other systems: Can use `0.0.0.0` to bind to all interfaces
 - `PORT`: Port to run the server on (default: 5000)
 - `STRIPE_SECRET_KEY`: Stripe secret key (if using payment features)
 - `VITE_STRIPE_PUBLIC_KEY`: Stripe public key for client-side

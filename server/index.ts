@@ -58,12 +58,15 @@ app.use((req, res, next) => {
 
   // Get port and host from environment variables, with defaults
   const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
-  const host = process.env.HOST || "0.0.0.0";
-  
+  // Use localhost (127.0.0.1) on Windows, otherwise use the HOST env var or default to 0.0.0.0
+  const isWindows = process.platform === 'win32';
+  const host = isWindows ? "127.0.0.1" : (process.env.HOST || "0.0.0.0");
+
   server.listen({
     port,
     host,
-    reusePort: true,
+    // Remove reusePort option as it's not supported on Windows
+    ...(isWindows ? {} : { reusePort: true }),
   }, () => {
     log(`serving on ${host}:${port}`);
     log(`NODE_ENV: ${process.env.NODE_ENV}`);
