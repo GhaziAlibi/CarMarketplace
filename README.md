@@ -21,67 +21,78 @@ A comprehensive multi-vendor car marketplace platform connecting buyers with sel
 - **Payments**: Stripe integration
 - **i18n**: i18next for internationalization
 
-## Running with Docker
-
-The application can be run using Docker Compose for a complete environment including the PostgreSQL database.
+## Getting Started
 
 ### Prerequisites
 
-- Docker and Docker Compose installed on your system
+- Node.js 20 or higher
+- A PostgreSQL database (or use a serverless database like Neon)
 
-### Production Setup
+### Setup
 
 1. Clone the repository
 2. Create a `.env` file from the example:
    ```
    cp .env.example .env
    ```
-3. Edit the `.env` file with your configuration
-4. Update the build script in package.json to include seeding:
+3. Edit the `.env` file with your configuration, especially the `DATABASE_URL`
+4. Install dependencies:
+   ```
+   npm install
+   ```
+5. Push the database schema:
+   ```
+   npm run db:push
+   ```
+6. Seed the database (optional):
+   ```
+   npm run db:seed
+   ```
+7. Start the development server:
+   ```
+   npm run dev
+   ```
+8. Access the application at http://localhost:5000
+
+### Debugging with VSCode
+
+For debugging the Node.js server:
+
+1. Create a `.vscode/launch.json` file with the following configuration:
    ```json
-   "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist && esbuild server/seed.ts --platform=node --packages=external --bundle --format=esm --outdir=dist"
-   ```
-5. Build and start the containers:
-   ```
-   docker-compose build
-   docker-compose up -d
-   ```
-6. Access the application at http://localhost:5000
-7. View logs with:
-   ```
-   docker-compose logs -f
-   ```
-
-### Development Setup with Hot Reloading
-
-For local development with hot reloading:
-
-1. Build and start the development containers:
-   ```
-   docker-compose -f docker-compose.dev.yml up
-   ```
-   
-2. Any changes you make to the source code will be automatically detected and the application will reload.
-
-3. To rebuild the development containers (after package.json changes):
-   ```
-   docker-compose -f docker-compose.dev.yml build
+   {
+     "version": "0.2.0",
+     "configurations": [
+       {
+         "name": "Debug Node.js",
+         "type": "node",
+         "request": "launch",
+         "skipFiles": ["<node_internals>/**"],
+         "program": "${workspaceFolder}/server/index.ts",
+         "runtimeArgs": [
+           "--experimental-specifier-resolution=node",
+           "--import",
+           "./pathfix.js",
+           "--import",
+           "tsx"
+         ],
+         "env": {
+           "NODE_ENV": "development"
+         },
+         "outFiles": ["${workspaceFolder}/**/*.js"]
+       }
+     ]
+   }
    ```
 
-4. To stop the development environment:
-   ```
-   docker-compose -f docker-compose.dev.yml down
-   ```
+2. Start the application in debug mode:
+   - In VSCode, go to the "Run and Debug" panel (Ctrl+Shift+D)
+   - Select "Debug Node.js" from the dropdown menu
+   - Click the green play button or press F5 to start debugging
 
-### Docker Commands
+3. Set breakpoints in your code and VSCode will pause execution at those points
 
-- Build the containers: `docker-compose build`
-- Start the application: `docker-compose up -d`
-- Stop the application: `docker-compose down`
-- View logs: `docker-compose logs -f`
-- Access PostgreSQL: `docker-compose exec postgres psql -U postgres -d automart`
-- Run database migrations: `docker-compose exec app npm run db:push`
-- Run database seeding: `docker-compose exec app npm run seed`
+4. Use the debug toolbar to step through code, inspect variables, and more
 
 ### Environment Variables
 
@@ -95,19 +106,7 @@ These can be set in your `.env` file:
 - `STRIPE_SECRET_KEY`: Stripe secret key (if using payment features)
 - `VITE_STRIPE_PUBLIC_KEY`: Stripe public key for client-side
 
-## Development Setup
 
-To run the application without Docker for development:
-
-1. Install dependencies:
-   ```
-   npm install
-   ```
-2. Set up environment variables (see `.env.example`)
-3. Start the development server:
-   ```
-   npm run dev
-   ```
 
 ## Database Schema
 
