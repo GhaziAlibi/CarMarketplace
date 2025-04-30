@@ -66,7 +66,8 @@ import {
   UserX,
   UserCheck,
   ShieldAlert,
-  Shield
+  Shield,
+  CreditCard
 } from "lucide-react";
 
 const AdminUsers: React.FC = () => {

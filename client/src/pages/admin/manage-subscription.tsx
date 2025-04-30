@@ -3,9 +3,9 @@ import { useParams, Link, useLocation } from "wouter";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { SubscriptionTier, User } from "@shared/schema";
-import Header from "../../components/header";
-import Footer from "../../components/footer";
+import { SubscriptionTier, User, Subscription } from "@shared/schema";
+import Header from "@/components/layout/header";
+import Footer from "@/components/layout/footer";
 import {
   Card,
   CardContent,
