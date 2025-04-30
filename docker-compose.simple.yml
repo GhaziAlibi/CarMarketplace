@@ -4,7 +4,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile.simple.dev
     volumes:
       - ./client:/app/client
       - ./server:/app/server
@@ -18,9 +18,6 @@ services:
       - ./components.json:/app/components.json
       - ./pathfix.js:/app/pathfix.js
       - ./start-dev-with-pathfix.sh:/app/start-dev-with-pathfix.sh
-      - ./docker-entrypoint.sh:/app/docker-entrypoint.sh
-      - ./wait-for-it.sh:/app/wait-for-it.sh
-      - ./docker-seed.sh:/app/docker-seed.sh
     ports:
       - "5000:5000"
     environment:
@@ -31,7 +28,8 @@ services:
       - PORT=5000
     depends_on:
       - postgres
-    command: /app/start-dev-with-pathfix.sh
+    # Direct command without entrypoint
+    command: sh -c "chmod +x /app/start-dev-with-pathfix.sh && /app/start-dev-with-pathfix.sh"
     restart: unless-stopped
 
   postgres:
