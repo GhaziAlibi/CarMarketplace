@@ -55,7 +55,8 @@ const subscriptionFormSchema = z.object({
 type SubscriptionFormValues = z.infer<typeof subscriptionFormSchema>;
 
 const ManageSubscription = () => {
-  const { userId } = useParams();
+  const params = useParams();
+  const userId = params.userId || '';
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -76,7 +77,7 @@ const ManageSubscription = () => {
     data: subscription,
     isLoading: isLoadingSubscription,
     isError: isSubscriptionError,
-  } = useQuery({
+  } = useQuery<Subscription>({
     queryKey: [`/api/admin/subscriptions/${userId}`],
     enabled: !isNaN(numericUserId)
   });
@@ -97,9 +98,9 @@ const ManageSubscription = () => {
   useEffect(() => {
     if (subscription) {
       form.reset({
-        tier: subscription.tier,
-        listingLimit: subscription.listingLimit || undefined,
-        active: subscription.active,
+        tier: subscription.tier as SubscriptionTier,
+        listingLimit: undefined, // This will be set based on tier
+        active: subscription.active === null ? true : subscription.active,
         startDate: subscription.startDate ? new Date(subscription.startDate).toISOString().substring(0, 10) : undefined,
         endDate: subscription.endDate ? new Date(subscription.endDate).toISOString().substring(0, 10) : undefined,
       });
@@ -192,7 +193,7 @@ const ManageSubscription = () => {
     );
   }
 
-  const tierBadge = (tier: SubscriptionTier) => {
+  const tierBadge = (tier: string | SubscriptionTier) => {
     switch(tier) {
       case SubscriptionTier.FREE:
         return <Badge variant="outline">Free</Badge>;
