@@ -92,8 +92,8 @@ export const privateAdminSubscriptionRoutes: RouterConfig = {
         }
         
         console.log("Request body received:", req.body);
-        console.log("Subscription data to update:", subscriptionData);
         
+        // Handle dates explicitly, allowing null values
         if (startDateStr) {
           try {
             subscriptionData.startDate = new Date(startDateStr);
@@ -102,15 +102,18 @@ export const privateAdminSubscriptionRoutes: RouterConfig = {
           }
         }
         
-        if (endDateStr) {
+        // Handle null end date specifically (for unlimited subscription)
+        if (endDateStr === null) {
+          subscriptionData.endDate = null;
+        } else if (endDateStr) {
           try {
             subscriptionData.endDate = new Date(endDateStr);
           } catch (e) {
             return res.status(400).json({ error: "Invalid end date format" });
           }
-        } else if (endDateStr === null) {
-          subscriptionData.endDate = null;
         }
+        
+        console.log("Subscription data to update:", subscriptionData);
         
         // Check if user exists
         const user = await storage.getUser(userId);

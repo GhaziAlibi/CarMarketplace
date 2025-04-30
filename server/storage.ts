@@ -979,63 +979,62 @@ export class DatabaseStorage implements IStorage {
   
   async updateSubscription(id: number, subscriptionData: Partial<Subscription>): Promise<Subscription | undefined> {
     try {
-      // Use SQL tagged template to safely handle parameters
-      const updateFields = [];
-      const params = [];
+      // Use sql template literals from the database driver which properly handles parameter binding
+      // Prepare base query
+      let query = 'UPDATE subscriptions SET ';
+      let updates = [];
       
-      // Only add fields that are defined in the input data
+      // Add fields conditionally
       if (subscriptionData.tier !== undefined) {
-        params.push(subscriptionData.tier);
-        updateFields.push(`tier = $${params.length}`);
+        updates.push(`tier = '${subscriptionData.tier}'`);
       }
       
       if (subscriptionData.startDate !== undefined) {
-        params.push(subscriptionData.startDate);
-        updateFields.push(`start_date = $${params.length}`);
+        updates.push(`start_date = '${subscriptionData.startDate.toISOString()}'`);
       }
       
       if (subscriptionData.endDate !== undefined) {
-        params.push(subscriptionData.endDate);
-        updateFields.push(`end_date = $${params.length}`);
+        if (subscriptionData.endDate === null) {
+          updates.push(`end_date = NULL`);
+        } else {
+          updates.push(`end_date = '${subscriptionData.endDate.toISOString()}'`);
+        }
       }
       
       if (subscriptionData.stripeCustomerId !== undefined) {
-        params.push(subscriptionData.stripeCustomerId);
-        updateFields.push(`stripe_customer_id = $${params.length}`);
+        if (subscriptionData.stripeCustomerId === null) {
+          updates.push(`stripe_customer_id = NULL`);
+        } else {
+          updates.push(`stripe_customer_id = '${subscriptionData.stripeCustomerId}'`);
+        }
       }
       
       if (subscriptionData.stripeSubscriptionId !== undefined) {
-        params.push(subscriptionData.stripeSubscriptionId);
-        updateFields.push(`stripe_subscription_id = $${params.length}`);
+        if (subscriptionData.stripeSubscriptionId === null) {
+          updates.push(`stripe_subscription_id = NULL`);
+        } else {
+          updates.push(`stripe_subscription_id = '${subscriptionData.stripeSubscriptionId}'`);
+        }
       }
       
       if (subscriptionData.active !== undefined) {
-        params.push(subscriptionData.active);
-        updateFields.push(`active = $${params.length}`);
+        updates.push(`active = ${subscriptionData.active}`);
       }
       
       // Always update the timestamp
-      updateFields.push('updated_at = NOW()');
+      updates.push(`updated_at = NOW()`);
       
-      if (updateFields.length === 0 && !('endDate' in subscriptionData)) {
-        // No changes requested, return current subscription
-        return await this.getSubscription(id);
+      if (updates.length === 0) {
+        return await this.getSubscription(id); // Nothing to update
       }
       
-      // Add ID parameter last
-      params.push(id);
+      // Complete the query
+      query += updates.join(', ');
+      query += ` WHERE id = ${id} RETURNING *`;
       
-      const sql = `
-        UPDATE subscriptions 
-        SET ${updateFields.join(', ')}
-        WHERE id = $${params.length}
-        RETURNING *
-      `;
+      console.log("Executing SQL:", query);
       
-      console.log("Executing SQL:", sql);
-      console.log("With params:", params);
-      
-      const result = await db.execute(sql, params);
+      const result = await db.execute(query);
       
       if (result.rows.length === 0) return undefined;
       
