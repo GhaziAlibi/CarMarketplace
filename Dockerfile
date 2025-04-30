@@ -36,6 +36,7 @@ COPY docker-entrypoint.sh ./
 COPY wait-for-it.sh ./
 COPY docker-seed.sh ./
 COPY shared ./shared
+COPY client/index.html ./client/
 
 # Make scripts executable
 RUN chmod +x /app/wait-for-it.sh

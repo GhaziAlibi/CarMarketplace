@@ -43,13 +43,22 @@ export const privateAdminSubscriptionRoutes: RouterConfig = {
           return res.status(400).json({ error: "Invalid user ID" });
         }
         
+        // First verify the user exists
+        const user = await storage.getUser(userId);
+        if (!user) {
+          return res.status(404).json({ error: "User not found" });
+        }
+        
         const subscription = await storage.getSubscriptionByUserId(userId);
         if (!subscription) {
-          return res.status(404).json({ error: "Subscription not found" });
+          // Return a 200 with null data to indicate no subscription exists (not a 404)
+          // This allows the front-end to handle it as a "create new subscription" case
+          return res.json(null);
         }
         
         res.json(subscription);
       } catch (error) {
+        console.error("Error fetching subscription:", error);
         res.status(500).json({ error: "Failed to fetch subscription" });
       }
     });

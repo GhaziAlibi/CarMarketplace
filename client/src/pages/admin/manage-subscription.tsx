@@ -95,9 +95,12 @@ const ManageSubscription: React.FC = () => {
     isError: isSubscriptionError,
   } = useQuery<Subscription | null>({
     queryKey: [`/api/admin/users/${userId}/subscription`],
-    onError: () => {
-      // Don't show error toast, as user might not have a subscription yet
-      console.log("No existing subscription found or error fetching");
+    enabled: !!user && user.role === "admin" && !!userId,
+    retry: false,
+    onError: (error) => {
+      // Log the error but don't show toast, as user might not have a subscription yet
+      console.log("Subscription fetch error:", error);
+      // Set subscription to null to handle as new subscription creation
     },
   });
 
