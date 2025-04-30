@@ -892,7 +892,7 @@ export class DatabaseStorage implements IStorage {
         endDate: sub.end_date,
         stripeCustomerId: sub.stripe_customer_id,
         stripeSubscriptionId: sub.stripe_subscription_id,
-        active: sub.active,
+        active: sub.status === "active",
         createdAt: sub.created_at,
         updatedAt: sub.updated_at
       } as Subscription;
@@ -923,7 +923,7 @@ export class DatabaseStorage implements IStorage {
         endDate: sub.end_date,
         stripeCustomerId: sub.stripe_customer_id,
         stripeSubscriptionId: sub.stripe_subscription_id,
-        active: sub.active,
+        active: sub.status === "active",
         createdAt: sub.created_at,
         updatedAt: sub.updated_at
       } as Subscription;
