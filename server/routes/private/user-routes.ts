@@ -60,6 +60,33 @@ export const privateUserRoutes: RouterConfig = {
         res.status(500).json({ error: "Failed to get users by role" });
       }
     });
+    
+    // Get a single user by ID - admin access or own user
+    app.get("/api/users/:id", requireAuth, async (req, res) => {
+      try {
+        const userId = parseInt(req.params.id);
+        if (isNaN(userId)) {
+          return res.status(400).json({ error: "Invalid user ID" });
+        }
+        
+        // Only admins or the user themselves can access user details
+        if (req.user?.id !== userId && req.user?.role !== UserRole.ADMIN) {
+          return res.status(403).json({ error: "Unauthorized to access this user data" });
+        }
+        
+        const user = await storage.getUser(userId);
+        if (!user) {
+          return res.status(404).json({ error: "User not found" });
+        }
+        
+        // Remove password from response
+        const { password, ...userWithoutPassword } = user;
+        res.json(userWithoutPassword);
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        res.status(500).json({ error: "Failed to get user" });
+      }
+    });
 
     // Update user - requires authentication
     app.put("/api/users/:id", requireAuth, async (req, res) => {
