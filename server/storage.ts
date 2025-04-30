@@ -947,8 +947,8 @@ export class DatabaseStorage implements IStorage {
         (${subscriptionData.userId}, ${subscriptionData.tier}, 
          ${subscriptionData.stripeCustomerId || null}, 
          ${subscriptionData.stripeSubscriptionId || null}, 
-         ${subscriptionData.active !== false ? 'active' : 'inactive'},
-         ${subscriptionData.tier === 'FREE' ? 3 : 99999},
+         ${subscriptionData.status || 'active'},
+         ${subscriptionData.listingLimit || (subscriptionData.tier === 'FREE' ? 3 : 99999)},
          NOW())
         RETURNING *
       `);
@@ -963,13 +963,13 @@ export class DatabaseStorage implements IStorage {
         id: sub.id,
         userId: sub.user_id,
         tier: sub.tier,
+        status: sub.status,
+        listingLimit: sub.listing_limit,
         startDate: sub.start_date,
         endDate: sub.end_date,
         stripeCustomerId: sub.stripe_customer_id,
         stripeSubscriptionId: sub.stripe_subscription_id,
-        active: sub.active,
-        createdAt: sub.created_at,
-        updatedAt: sub.updated_at
+        createdAt: sub.created_at
       } as Subscription;
     } catch (error) {
       console.error('Error in createSubscription:', error);
@@ -987,6 +987,10 @@ export class DatabaseStorage implements IStorage {
       // Add fields conditionally
       if (subscriptionData.tier !== undefined) {
         updates.push(`tier = '${subscriptionData.tier}'`);
+      }
+      
+      if (subscriptionData.listingLimit !== undefined) {
+        updates.push(`listing_limit = ${subscriptionData.listingLimit}`);
       }
       
       if (subscriptionData.startDate !== undefined) {
@@ -1017,11 +1021,8 @@ export class DatabaseStorage implements IStorage {
         }
       }
       
-      if (subscriptionData.active !== undefined) {
-        // The column in the database is actually called "status", not "active"
-        // Convert boolean to "active"/"inactive"
-        const statusValue = subscriptionData.active ? 'active' : 'inactive';
-        updates.push(`status = '${statusValue}'`);
+      if (subscriptionData.status !== undefined) {
+        updates.push(`status = '${subscriptionData.status}'`);
       }
       
       // Always update the timestamp
@@ -1440,7 +1441,7 @@ export class MemStorage implements IStorage {
   
   async getSubscriptionByUserId(userId: number): Promise<Subscription | undefined> {
     return Array.from(this.subscriptionsMap.values()).find(
-      (sub) => sub.userId === userId && sub.active
+      (sub) => sub.userId === userId && sub.status === 'active'
     );
   }
   
@@ -1450,11 +1451,11 @@ export class MemStorage implements IStorage {
       ...subscriptionData,
       id,
       tier: subscriptionData.tier || SubscriptionTier.FREE,
+      status: subscriptionData.status || 'active',
+      listingLimit: subscriptionData.listingLimit || (subscriptionData.tier === SubscriptionTier.FREE ? 3 : 99999),
       startDate: new Date(),
       endDate: null,
-      active: subscriptionData.active !== false,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      createdAt: new Date()
     };
     this.subscriptionsMap.set(id, subscription);
     return subscription;
@@ -1466,8 +1467,7 @@ export class MemStorage implements IStorage {
     
     const updatedSubscription = { 
       ...existingSubscription, 
-      ...subscriptionData,
-      updatedAt: new Date()
+      ...subscriptionData
     };
     this.subscriptionsMap.set(id, updatedSubscription);
     return updatedSubscription;
@@ -1477,9 +1477,8 @@ export class MemStorage implements IStorage {
     const existingSubscription = await this.getSubscription(id);
     if (!existingSubscription) return false;
     
-    existingSubscription.active = false;
+    existingSubscription.status = 'inactive';
     existingSubscription.endDate = new Date();
-    existingSubscription.updatedAt = new Date();
     this.subscriptionsMap.set(id, existingSubscription);
     return true;
   }
