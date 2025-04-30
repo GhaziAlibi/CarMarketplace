@@ -412,6 +412,15 @@ const AdminUsers: React.FC = () => {
                                   </Button>
                                 </DropdownMenuItem>
                                 
+                                {user.role === UserRole.SELLER && (
+                                  <DropdownMenuItem asChild>
+                                    <Link href={`/admin/manage-subscription/${user.id}`} className="w-full flex items-center">
+                                      <CreditCard className="h-4 w-4 mr-2" />
+                                      Manage Subscription
+                                    </Link>
+                                  </DropdownMenuItem>
+                                )}
+                                
                                 {user.role !== UserRole.ADMIN && (
                                   <>
                                     <DropdownMenuSeparator />
