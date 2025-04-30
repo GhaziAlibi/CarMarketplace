@@ -1025,8 +1025,7 @@ export class DatabaseStorage implements IStorage {
         updates.push(`status = '${subscriptionData.status}'`);
       }
       
-      // Always update the timestamp
-      updates.push(`updated_at = NOW()`);
+      // Note: updated_at column does not exist in subscriptions table
       
       if (updates.length === 0) {
         return await this.getSubscription(id); // Nothing to update
@@ -1064,9 +1063,10 @@ export class DatabaseStorage implements IStorage {
   
   async cancelSubscription(id: number): Promise<boolean> {
     try {
+      // Note: removed updated_at column as it doesn't exist in the table
       const result = await db.execute(sql`
         UPDATE subscriptions
-        SET status = 'inactive', end_date = NOW(), updated_at = NOW()
+        SET status = 'inactive', end_date = NOW()
         WHERE id = ${id}
         RETURNING id
       `);
