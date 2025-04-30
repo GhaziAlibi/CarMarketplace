@@ -54,7 +54,8 @@ import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
   tier: z.enum([SubscriptionTier.FREE, SubscriptionTier.PREMIUM, SubscriptionTier.VIP]),
-  active: z.boolean().default(true),
+  status: z.enum(['active', 'inactive']).default('active'),
+  listingLimit: z.number().nullable().optional(),
   startDate: z.date().optional(),
   endDate: z.date().nullable().optional(),
 });
@@ -128,7 +129,8 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
     resolver: zodResolver(formSchema),
     defaultValues: {
       tier: SubscriptionTier.FREE,
-      active: true,
+      status: 'active',
+      listingLimit: 3,
       startDate: new Date(),
       endDate: null,
     },
@@ -139,14 +141,16 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
     if (subscription) {
       form.reset({
         tier: subscription.tier as SubscriptionTier,
-        active: subscription.active === null ? true : subscription.active,
+        status: subscription.status || 'active',
+        listingLimit: subscription.listingLimit || (subscription.tier === SubscriptionTier.FREE ? 3 : null),
         startDate: subscription.startDate ? new Date(subscription.startDate) : new Date(),
         endDate: subscription.endDate ? new Date(subscription.endDate) : null,
       });
     } else if (!isLoadingSubscription) {
       form.reset({
         tier: SubscriptionTier.FREE,
-        active: true,
+        status: 'active',
+        listingLimit: 3,
         startDate: new Date(),
         endDate: null,
       });
@@ -286,7 +290,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Status</p>
                       <div className="flex items-center">
-                        {subscription.active ? (
+                        {subscription.status === 'active' ? (
                           <>
                             <span className="h-2 w-2 bg-green-500 rounded-full mr-2"></span>
                             <span className="font-medium text-green-700">Active</span>
