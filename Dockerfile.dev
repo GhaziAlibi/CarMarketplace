@@ -37,5 +37,10 @@ EXPOSE 5000
 # Use entrypoint script to wait for database before starting
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 
-# Start development server with hot reloading
-CMD ["npm", "run", "dev"]
+# Copy the path fix files
+COPY pathfix.js ./
+COPY start-dev-with-pathfix.sh ./
+RUN chmod +x /app/start-dev-with-pathfix.sh
+
+# Start development server with hot reloading and path fixes
+CMD ["/app/start-dev-with-pathfix.sh"]
