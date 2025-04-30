@@ -1,620 +1,236 @@
 import React from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { SubscriptionTier, User, Subscription } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { SubscriptionTier } from "@shared/schema";
-import { 
+import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
-  CardTitle
+  CardTitle,
 } from "@/components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import {
-  CreditCard,
-  CheckCircle,
-  XCircle,
-  Car,
-  AlertTriangle,
-  Infinity,
-  Loader2,
-  BadgeCheck,
-  CheckCircle2,
-  Award,
-  Info
-} from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Loader2, AlertCircle, Calendar, Check, Package } from "lucide-react";
 import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import PaymentForm from "@/components/payment-form";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const SubscriptionContent: React.FC = () => {
-  const { toast } = useToast();
   const { user } = useAuth();
-  const [showPaymentForm, setShowPaymentForm] = React.useState(false);
-  const [currentSubscription, setCurrentSubscription] = React.useState<any>(null);
   
-  // Get current subscription
-  const {
+  // Fetch current user's subscription
+  const { 
     data: subscription,
     isLoading: isLoadingSubscription,
-    refetch: refetchSubscription
-  } = useQuery({
-    queryKey: ["/api/subscriptions/current"],
-    enabled: !!user,
-    onSuccess: (data) => {
-      setCurrentSubscription(data);
-    }
+    isError: isSubscriptionError
+  } = useQuery<Subscription>({
+    queryKey: ["/api/subscriptions/my"],
   });
   
-  // Get seller's showroom
+  // Fetch subscription tiers info
   const {
-    data: showroom,
-    isLoading: isLoadingShowroom,
+    data: tiers = [],
+    isLoading: isLoadingTiers,
+    isError: isErrorTiers
   } = useQuery({
-    queryKey: ["/api/seller/showroom"],
-    enabled: !!user
+    queryKey: ["/api/subscription-tiers"],
   });
-  
-  // Check VIP slot availability 
-  const {
-    data: vipSlotsData,
-    isLoading: isLoadingVipSlots,
-    refetch: refetchVipSlots
-  } = useQuery({
-    queryKey: ["/api/showrooms/featured/count"],
-  });
-  
-  // Car count check to determine if within limits
-  const {
-    data: carLimitData,
-    isLoading: isCheckingLimit,
-    refetch: refetchCarLimit
-  } = useQuery({
-    queryKey: ["/api/check-car-limit"],
-    queryFn: async () => {
-      const res = await apiRequest("POST", "/api/check-car-limit", {});
-      return res.json();
-    },
-    enabled: !!user
-  });
-  
-  // Cancel subscription mutation
-  const cancelSubscriptionMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/subscriptions/cancel", {});
-      return res.json();
-    },
-    onSuccess: () => {
-      refetchSubscription();
-      toast({
-        title: "Subscription Cancelled",
-        description: "Your subscription has been downgraded to free tier at the end of your billing cycle.",
-        variant: "default", 
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "There was an error cancelling your subscription.",
-        variant: "destructive",
-      });
-    }
-  });
-  
-  // VIP feature mutations
-  const setShowroomAsFeatured = useMutation({
-    mutationFn: async () => {
-      if (!showroom) throw new Error("No showroom found");
-      const res = await apiRequest("POST", `/api/showrooms/${showroom.id}/feature`, {});
-      return res.json();
-    },
-    onSuccess: () => {
-      refetchVipSlots();
-      toast({
-        title: "VIP Status Activated",
-        description: "Your showroom is now featured in the VIP section!",
-        variant: "default",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "There was an error featuring your showroom.",
-        variant: "destructive",
-      });
-    }
-  });
-  
-  const removeShowroomFromFeatured = useMutation({
-    mutationFn: async () => {
-      if (!showroom) throw new Error("No showroom found");
-      const res = await apiRequest("POST", `/api/showrooms/${showroom.id}/unfeature`, {});
-      return res.json();
-    },
-    onSuccess: () => {
-      refetchVipSlots();
-      toast({
-        title: "VIP Status Removed",
-        description: "Your showroom has been removed from the VIP section.",
-        variant: "default",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "There was an error removing your showroom from featured.",
-        variant: "destructive",
-      });
-    }
-  });
-  
-  // Handle plan upgrade
-  const handleUpgradeToPremium = () => {
-    setShowPaymentForm(true);
-  };
-  
-  // Handle successful payment
-  const handlePaymentSuccess = () => {
-    setShowPaymentForm(false);
-    refetchSubscription();
-    refetchCarLimit();
-    
-    toast({
-      title: "Subscription Activated",
-      description: "Your premium subscription has been activated successfully!",
-      variant: "default",
+
+  // Format date
+  const formatDate = (dateString: Date | string | null) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric"
     });
   };
-  
-  // Calculate the subscription stats
-  const getSubscriptionStats = () => {
-    const isFreeTier = !subscription || subscription.tier === SubscriptionTier.FREE;
-    const isPremiumTier = subscription && subscription.tier === SubscriptionTier.PREMIUM;
-    const isVipTier = subscription && subscription.tier === SubscriptionTier.VIP;
-    const isActive = subscription && subscription.active;
-    
-    return {
-      isFreeTier,
-      isPremiumTier,
-      isVipTier,
-      isActive,
-      carLimit: isFreeTier ? 3 : null,
-      currentCars: carLimitData?.currentCount || 0,
-      canAddMore: carLimitData?.canAddMore || false
-    };
-  };
-  
-  if (isLoadingSubscription || isCheckingLimit || isLoadingShowroom || isLoadingVipSlots) {
+
+  if (isLoadingSubscription || isLoadingTiers) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Subscription</CardTitle>
-          <CardDescription>Loading your subscription details...</CardDescription>
-        </CardHeader>
-        <CardContent className="flex justify-center items-center py-12">
+      <div className="flex items-center justify-center h-full">
+        <div className="flex flex-col items-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </CardContent>
-      </Card>
+          <p className="mt-4 text-gray-500">Loading subscription data...</p>
+        </div>
+      </div>
     );
   }
-  
-  const stats = getSubscriptionStats();
-  
-  // If payment form is shown
-  if (showPaymentForm) {
+
+  if (isSubscriptionError || isErrorTiers) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Upgrade to Premium</CardTitle>
-          <CardDescription>Complete payment to activate your premium subscription</CardDescription>
-        </CardHeader>
-        <CardContent className="pt-4">
-          <Alert className="mb-6">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Payment Simulation</AlertTitle>
-            <AlertDescription>
-              This is a demo payment form. No actual charges will be made.
-            </AlertDescription>
-          </Alert>
-          
-          <PaymentForm onPaymentSuccess={handlePaymentSuccess} />
-        </CardContent>
-        <CardFooter>
-          <Button 
-            variant="outline" 
-            className="mr-2" 
-            onClick={() => setShowPaymentForm(false)}
-          >
-            Cancel
-          </Button>
-        </CardFooter>
-      </Card>
+      <Alert variant="destructive" className="mb-6">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>
+          Failed to load subscription data. Please try again later.
+        </AlertDescription>
+      </Alert>
     );
   }
-  
+
+  // Find tier details for current subscription
+  const currentTier = tiers.find((tier: any) => 
+    tier.id === subscription?.tier.toLowerCase()
+  );
+
+  // Get next tier
+  const getNextTier = () => {
+    if (subscription?.tier === SubscriptionTier.FREE) {
+      return tiers.find((tier: any) => tier.id === "premium");
+    } else if (subscription?.tier === SubscriptionTier.PREMIUM) {
+      return tiers.find((tier: any) => tier.id === "vip");
+    }
+    return null;
+  };
+
+  const nextTier = getNextTier();
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CreditCard className="h-5 w-5" />
-          Subscription Management
-        </CardTitle>
-        <CardDescription>
-          Manage your subscription and listing allowances
-        </CardDescription>
-      </CardHeader>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">My Subscription</h1>
       
-      <CardContent>
-        {/* Current Plan Info */}
-        <div className="space-y-4 mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-medium">Current Plan</h3>
-              <p className="text-sm text-muted-foreground">
-                {stats.isFreeTier 
-                  ? "Free tier" 
-                  : stats.isPremiumTier 
-                    ? "Premium tier" 
-                    : "VIP tier"}
-              </p>
-            </div>
-            <div className="flex items-center">
-              {stats.isActive ? (
-                <div className="flex items-center text-green-600">
-                  <CheckCircle className="h-5 w-5 mr-1" />
-                  <span>Active</span>
-                </div>
-              ) : (
-                <div className="flex items-center text-red-600">
-                  <XCircle className="h-5 w-5 mr-1" />
-                  <span>Inactive</span>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="rounded-lg border p-4">
-              <h4 className="text-sm font-medium mb-2">Listing Limit</h4>
-              <div className="flex items-center">
-                {stats.isFreeTier ? (
-                  <span className="text-2xl font-bold">3</span>
-                ) : (
-                  <Infinity className="h-7 w-7 text-primary" />
+      {/* Current Subscription */}
+      {subscription && (
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-start">
+              <div>
+                <CardTitle>Current Subscription Plan</CardTitle>
+                <CardDescription>Your active subscription details</CardDescription>
+              </div>
+              <div>
+                {subscription.tier === SubscriptionTier.FREE && (
+                  <Badge variant="outline">Free</Badge>
+                )}
+                {subscription.tier === SubscriptionTier.PREMIUM && (
+                  <Badge variant="secondary">Premium</Badge>
+                )}
+                {subscription.tier === SubscriptionTier.VIP && (
+                  <Badge variant="default" className="bg-amber-500">VIP</Badge>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {stats.isFreeTier ? "Limited to 3 car listings" : "Unlimited car listings"}
-              </p>
             </div>
-            
-            <div className="rounded-lg border p-4">
-              <h4 className="text-sm font-medium mb-2">Current Listings</h4>
-              <span className="text-2xl font-bold">{stats.currentCars}</span>
-              <p className="text-xs text-muted-foreground mt-1">
-                {stats.canAddMore ? "You can add more listings" : "Reached limit on free tier"}
-              </p>
-            </div>
-            
-            <div className="rounded-lg border p-4">
-              <h4 className="text-sm font-medium mb-2">Remaining</h4>
-              <span className="text-2xl font-bold">
-                {stats.isFreeTier 
-                  ? Math.max(0, stats.carLimit! - stats.currentCars) 
-                  : "∞"}
-              </span>
-              <p className="text-xs text-muted-foreground mt-1">
-                {stats.isFreeTier ? "Available listing slots" : "Unlimited slots"}
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <Separator className="my-6" />
-        
-        {/* Subscription Plans */}
-        <div className="space-y-6">
-          <h3 className="text-lg font-medium">Available Plans</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Free Tier */}
-            <div className="relative rounded-lg border p-6">
-              {stats.isFreeTier && stats.isActive && (
-                <div className="absolute top-3 right-3 bg-primary text-xs text-primary-foreground px-2 py-1 rounded">
-                  Current Plan
-                </div>
-              )}
-              
-              <h4 className="text-lg font-bold mb-1">Free Tier</h4>
-              <p className="text-2xl font-bold mb-4">$0 <span className="text-sm font-normal text-muted-foreground">/month</span></p>
-              
-              <ul className="space-y-2 mb-6">
-                <li className="flex items-start">
-                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>Up to 3 car listings</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>Basic showroom profile</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>Message system access</span>
-                </li>
-                <li className="flex items-start">
-                  <XCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span className="text-muted-foreground">Featured listings</span>
-                </li>
-                <li className="flex items-start">
-                  <XCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span className="text-muted-foreground">Priority search ranking</span>
-                </li>
-                <li className="flex items-start">
-                  <XCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span className="text-muted-foreground">VIP showroom status</span>
-                </li>
-              </ul>
-              
-              {stats.isFreeTier ? (
-                <Button disabled className="w-full">
-                  <BadgeCheck className="mr-2 h-4 w-4" />
-                  Current Plan
-                </Button>
-              ) : (
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => cancelSubscriptionMutation.mutate()}
-                  disabled={cancelSubscriptionMutation.isPending}
-                >
-                  {cancelSubscriptionMutation.isPending && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-500">Status</p>
+                <p className="flex items-center">
+                  {subscription.active ? (
+                    <>
+                      <span className="h-2 w-2 bg-green-500 rounded-full mr-2"></span>
+                      <span className="font-medium text-green-700">Active</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="h-2 w-2 bg-red-500 rounded-full mr-2"></span>
+                      <span className="font-medium text-red-700">Inactive</span>
+                    </>
                   )}
-                  Downgrade to Free
-                </Button>
-              )}
-            </div>
-            
-            {/* Premium Tier */}
-            <div className="relative rounded-lg border border-primary p-6 bg-primary/5">
-              {stats.isPremiumTier && stats.isActive && (
-                <div className="absolute top-3 right-3 bg-primary text-xs text-primary-foreground px-2 py-1 rounded">
-                  Current Plan
+                </p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-500">Start Date</p>
+                <p className="flex items-center">
+                  <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                  {formatDate(subscription.startDate)}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-500">End Date</p>
+                <p className="flex items-center">
+                  <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                  {subscription.endDate ? formatDate(subscription.endDate) : "Ongoing"}
+                </p>
+              </div>
+              {currentTier && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-500">Listing Limit</p>
+                  <p className="font-medium">
+                    {currentTier.listingLimit ? `${currentTier.listingLimit} listings` : "Unlimited listings"}
+                  </p>
                 </div>
-              )}
-              
-              <h4 className="text-lg font-bold mb-1">Premium Tier</h4>
-              <p className="text-2xl font-bold mb-4">$19.99 <span className="text-sm font-normal text-muted-foreground">/month</span></p>
-              
-              <ul className="space-y-2 mb-6">
-                <li className="flex items-start">
-                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span><strong>Unlimited</strong> car listings</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>Enhanced showroom profile</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>Message system access</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>Featured listings</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>Priority search ranking</span>
-                </li>
-                <li className="flex items-start">
-                  <XCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span className="text-muted-foreground">VIP showroom status</span>
-                </li>
-              </ul>
-              
-              {stats.isPremiumTier ? (
-                <Button disabled className="w-full bg-primary hover:bg-primary">
-                  <BadgeCheck className="mr-2 h-4 w-4" />
-                  Current Plan
-                </Button>
-              ) : stats.isVipTier ? (
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => cancelSubscriptionMutation.mutate()}
-                  disabled={cancelSubscriptionMutation.isPending}
-                >
-                  {cancelSubscriptionMutation.isPending && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  Downgrade to Premium
-                </Button>
-              ) : (
-                <Button 
-                  className="w-full"
-                  onClick={handleUpgradeToPremium}
-                >
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  Upgrade to Premium
-                </Button>
               )}
             </div>
 
-            {/* VIP Tier */}
-            <div className="relative rounded-lg border border-amber-500 p-6 bg-amber-50 dark:bg-amber-950/20">
-              {stats.isVipTier && stats.isActive && (
-                <div className="absolute top-3 right-3 bg-amber-500 text-xs text-white px-2 py-1 rounded">
-                  Current Plan
-                </div>
-              )}
-              <div className="absolute top-0 right-0 w-32 h-32 -mr-6 -mt-6 opacity-5">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="w-full h-full text-amber-900">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                </svg>
+            {/* Current Plan Features */}
+            {currentTier && (
+              <div className="mt-6">
+                <h3 className="text-sm font-medium text-gray-500 mb-3">Included Features</h3>
+                <ul className="space-y-2">
+                  {currentTier.features.map((feature: string, index: number) => (
+                    <li key={index} className="flex items-start">
+                      <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              
-              <div className="flex items-center gap-1 mb-2">
-                <Award className="h-5 w-5 text-amber-500" />
-                <h4 className="text-lg font-bold">VIP Tier</h4>
-                <Badge className="ml-2 bg-amber-200 text-amber-800 hover:bg-amber-300">Elite</Badge>
-              </div>
-              <p className="text-2xl font-bold mb-4">$49.99 <span className="text-sm font-normal text-muted-foreground">/month</span></p>
-              
-              <ul className="space-y-2 mb-6">
-                <li className="flex items-start">
-                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span><strong>Unlimited</strong> car listings</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>Premium showroom profile</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>Priority message system</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>Featured listings with highlights</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>Top search ranking guarantee</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span><strong>Exclusive VIP showroom status</strong></span>
-                </li>
-              </ul>
-              
-              {stats.isVipTier ? (
-                <Button disabled className="w-full bg-amber-500 hover:bg-amber-500">
-                  <BadgeCheck className="mr-2 h-4 w-4" />
-                  Current Plan
-                </Button>
-              ) : (
-                <Button 
-                  className="w-full bg-amber-500 hover:bg-amber-600 text-white"
-                  onClick={handleUpgradeToPremium}
-                >
-                  <Award className="mr-2 h-4 w-4" />
-                  Upgrade to VIP
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-        
-        {/* Only show VIP section for Premium users */}
-        {stats.isPremiumTier && stats.isActive && showroom && (
-          <>
-            <Separator className="my-6" />
+            )}
             
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-medium">VIP Showroom Status</h3>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-80">
-                        <p>Featured showrooms appear in the VIP section at the top of the showrooms page. Only 4 showrooms can be featured at a time.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                
-                <Badge variant="outline" className="gap-1">
-                  <span>{vipSlotsData?.count || 0}</span>
-                  <span>/</span>
-                  <span>4</span>
-                  <span>Slots Used</span>
-                </Badge>
-              </div>
-              
-              <div className="rounded-lg border p-6 bg-amber-50 dark:bg-amber-950/20">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Award className="h-6 w-6 text-amber-500" />
-                      <h4 className="text-lg font-bold">VIP Showroom Feature</h4>
+            {/* Admin-only notice */}
+            <Alert className="mt-6">
+              <Package className="h-4 w-4" />
+              <AlertTitle>Need to change your subscription?</AlertTitle>
+              <AlertDescription>
+                Please contact an administrator to update or change your subscription plan.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Available Plans Comparison */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Available Plans</CardTitle>
+          <CardDescription>Compare subscription plans</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table className="border-collapse">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Plan</TableHead>
+                <TableHead>Price</TableHead>
+                <TableHead>Listings</TableHead>
+                <TableHead>Features</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tiers.map((tier: any) => (
+                <TableRow key={tier.id} className={subscription?.tier.toLowerCase() === tier.id ? "bg-primary/5" : ""}>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center">
+                      {tier.name}
+                      {subscription?.tier.toLowerCase() === tier.id && (
+                        <Badge variant="outline" className="ml-2">Current</Badge>
+                      )}
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      Make your showroom stand out in the VIP section at the top of the showrooms page.
-                    </p>
-                    
-                    {showroom.isFeatured && (
-                      <div className="flex items-center text-green-600 mt-2">
-                        <BadgeCheck className="h-5 w-5 mr-1" />
-                        <span className="font-medium">Your showroom is featured</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div>
-                    {showroom.isFeatured ? (
-                      <Button 
-                        variant="outline"
-                        onClick={() => removeShowroomFromFeatured.mutate()}
-                        disabled={removeShowroomFromFeatured.isPending}
-                        className="w-full md:w-auto"
-                      >
-                        {removeShowroomFromFeatured.isPending && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        )}
-                        Remove VIP Status
-                      </Button>
-                    ) : (
-                      <Button 
-                        onClick={() => setShowroomAsFeatured.mutate()}
-                        disabled={setShowroomAsFeatured.isPending || (vipSlotsData?.count >= 4)}
-                        className="w-full md:w-auto bg-amber-500 hover:bg-amber-600 text-white"
-                      >
-                        {setShowroomAsFeatured.isPending ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <Award className="mr-2 h-4 w-4" />
-                        )}
-                        Upgrade to VIP
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                
-                {!showroom.isFeatured && vipSlotsData?.count >= 4 && (
-                  <Alert variant="destructive" className="mt-4">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>All VIP slots are taken</AlertTitle>
-                    <AlertDescription>
-                      Please try again later when a slot becomes available.
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </div>
-            </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
+                  </TableCell>
+                  <TableCell>{tier.priceDisplay}/month</TableCell>
+                  <TableCell>{tier.listingLimit ? `${tier.listingLimit} max` : "Unlimited"}</TableCell>
+                  <TableCell>
+                    <ul className="list-disc pl-4 space-y-1">
+                      {tier.features.map((feature: string, index: number) => (
+                        <li key={index} className="text-sm">{feature}</li>
+                      ))}
+                    </ul>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
