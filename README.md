@@ -29,7 +29,7 @@ The application can be run using Docker Compose for a complete environment inclu
 
 - Docker and Docker Compose installed on your system
 
-### Setup
+### Production Setup
 
 1. Clone the repository
 2. Create a `.env` file from the example:
@@ -52,6 +52,27 @@ The application can be run using Docker Compose for a complete environment inclu
    docker-compose logs -f
    ```
 
+### Development Setup with Hot Reloading
+
+For local development with hot reloading:
+
+1. Build and start the development containers:
+   ```
+   docker-compose -f docker-compose.dev.yml up
+   ```
+   
+2. Any changes you make to the source code will be automatically detected and the application will reload.
+
+3. To rebuild the development containers (after package.json changes):
+   ```
+   docker-compose -f docker-compose.dev.yml build
+   ```
+
+4. To stop the development environment:
+   ```
+   docker-compose -f docker-compose.dev.yml down
+   ```
+
 ### Docker Commands
 
 - Build the containers: `docker-compose build`
@@ -59,6 +80,8 @@ The application can be run using Docker Compose for a complete environment inclu
 - Stop the application: `docker-compose down`
 - View logs: `docker-compose logs -f`
 - Access PostgreSQL: `docker-compose exec postgres psql -U postgres -d automart`
+- Run database migrations: `docker-compose exec app npm run db:push`
+- Run database seeding: `docker-compose exec app npm run seed`
 
 ### Environment Variables
 
