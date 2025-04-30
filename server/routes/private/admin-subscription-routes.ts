@@ -8,7 +8,8 @@ import { z } from "zod";
 // Schema for subscription update
 const updateSubscriptionSchema = z.object({
   tier: z.enum([SubscriptionTier.FREE, SubscriptionTier.PREMIUM, SubscriptionTier.VIP]),
-  active: z.boolean().optional(),
+  status: z.enum(['active', 'inactive']).optional(),
+  listingLimit: z.number().nullable().optional(),
   startDate: z.string().optional().transform(val => val ? new Date(val) : undefined),
   endDate: z.string().nullable().optional().transform(val => val ? new Date(val) : null),
 });
@@ -73,7 +74,7 @@ export const privateAdminSubscriptionRoutes: RouterConfig = {
         
         // Parse and validate the request body manually instead of using Zod transform
         // to avoid type issues with Date conversion
-        const { tier, active, startDate: startDateStr, endDate: endDateStr } = req.body;
+        const { tier, status, listingLimit, startDate: startDateStr, endDate: endDateStr } = req.body;
         
         // Validate tier
         if (tier && ![SubscriptionTier.FREE, SubscriptionTier.PREMIUM, SubscriptionTier.VIP].includes(tier)) {
@@ -84,11 +85,24 @@ export const privateAdminSubscriptionRoutes: RouterConfig = {
         const subscriptionData: any = {};
         if (tier !== undefined) {
           subscriptionData.tier = tier;
+          
+          // Set default listing limit based on tier if not explicitly provided
+          if (listingLimit === undefined) {
+            subscriptionData.listingLimit = tier === SubscriptionTier.FREE ? 3 : null; // null means unlimited
+          }
         }
         
         // Handle optional fields
-        if (active !== undefined) {
-          subscriptionData.active = active;
+        if (status !== undefined) {
+          if (status !== 'active' && status !== 'inactive') {
+            return res.status(400).json({ error: "Status must be 'active' or 'inactive'" });
+          }
+          subscriptionData.status = status;
+        }
+        
+        // Handle listing limit
+        if (listingLimit !== undefined) {
+          subscriptionData.listingLimit = listingLimit;
         }
         
         console.log("Request body received:", req.body);
@@ -139,7 +153,7 @@ export const privateAdminSubscriptionRoutes: RouterConfig = {
           if (user.role === "seller") {
             const showroom = await storage.getShowroomByUserId(userId);
             if (showroom) {
-              const isFeatured = subscriptionData.tier === SubscriptionTier.VIP && subscriptionData.active !== false;
+              const isFeatured = subscriptionData.tier === SubscriptionTier.VIP && subscriptionData.status !== 'inactive';
               await storage.updateShowroom(showroom.id, {
                 isFeatured
               });
@@ -153,7 +167,8 @@ export const privateAdminSubscriptionRoutes: RouterConfig = {
           const newSubscription = await storage.createSubscription({
             userId,
             tier: subscriptionData.tier,
-            active: subscriptionData.active ?? true,
+            status: subscriptionData.status ?? 'active',
+            listingLimit: subscriptionData.listingLimit ?? (subscriptionData.tier === SubscriptionTier.FREE ? 3 : null),
             startDate: subscriptionData.startDate || now,
             endDate: subscriptionData.endDate !== undefined ? subscriptionData.endDate : null,
           });
@@ -162,7 +177,7 @@ export const privateAdminSubscriptionRoutes: RouterConfig = {
           if (user.role === "seller") {
             const showroom = await storage.getShowroomByUserId(userId);
             if (showroom) {
-              const isFeatured = newSubscription.tier === SubscriptionTier.VIP && newSubscription.active;
+              const isFeatured = newSubscription.tier === SubscriptionTier.VIP && newSubscription.status === 'active';
               await storage.updateShowroom(showroom.id, {
                 isFeatured
               });
@@ -198,7 +213,8 @@ export const privateAdminSubscriptionRoutes: RouterConfig = {
         
         // Set subscription to inactive instead of deleting it
         const updatedSubscription = await storage.updateSubscription(subscription.id, {
-          active: false
+          status: 'inactive',
+          endDate: new Date()
         });
         
         // Remove featured status if applicable
