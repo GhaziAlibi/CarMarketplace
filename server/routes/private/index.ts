@@ -7,6 +7,7 @@ import { privateMessageRoutes } from "./message-routes";
 import { privateFavoriteRoutes } from "./favorite-routes";
 import { privateSubscriptionRoutes } from "./subscription-routes";
 import { privateAdminRoutes } from "./admin-routes";
+import { adminSubscriptionRoutes } from "./admin-subscription-routes";
 
 // Register all private routes
 export function registerPrivateRoutes(app: Express): void {
@@ -21,4 +22,5 @@ export function registerPrivateRoutes(app: Express): void {
   privateFavoriteRoutes.registerRoutes(app);
   privateSubscriptionRoutes.registerRoutes(app);
   privateAdminRoutes.registerRoutes(app);
+  adminSubscriptionRoutes.registerRoutes(app);
 }
