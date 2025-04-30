@@ -1,7 +1,6 @@
 import { Express } from "express";
 import { storage } from "../../storage";
 import { requireAuth } from "../../auth";
-import { SubscriptionTier } from "@shared/schema";
 import { RouterConfig } from "../types";
 
 export const privateSubscriptionRoutes: RouterConfig = {
@@ -9,70 +8,73 @@ export const privateSubscriptionRoutes: RouterConfig = {
     // Get current user's subscription
     app.get("/api/subscriptions/my", requireAuth, async (req, res) => {
       try {
-        const subscription = await storage.getSubscriptionByUserId(req.user!.id);
+        const userId = req.user!.id;
+        const subscription = await storage.getSubscriptionByUserId(userId);
+        
         if (!subscription) {
-          return res.status(404).json({ error: "No active subscription found" });
+          return res.status(404).json({ error: "No subscription found" });
         }
+        
         res.json(subscription);
       } catch (error) {
-        res.status(500).json({ error: "Failed to get subscription" });
+        res.status(500).json({ error: "Failed to fetch subscription" });
       }
     });
-
-    // Get subscription tiers info (pricing, features, etc.)
+    
+    // Get subscription tiers information
     app.get("/api/subscription-tiers", async (req, res) => {
       try {
-        // Return static subscription tier information
+        // In a real application, this would come from the database
+        // For now, we're hardcoding the subscription tiers
         const tiers = [
           {
             id: "free",
             name: "Free",
             price: 0,
             priceDisplay: "$0",
-            description: "Basic tier for new sellers",
+            listingLimit: 3,
             features: [
               "Up to 3 car listings",
               "Basic showroom profile",
-              "Message system access"
-            ],
-            listingLimit: 3
+              "Standard search visibility",
+              "Email support"
+            ]
           },
           {
             id: "premium",
             name: "Premium",
-            price: 19.99,
-            priceDisplay: "$19.99",
-            description: "For professional sellers",
+            price: 29.99,
+            priceDisplay: "$29.99",
+            listingLimit: null, // unlimited
             features: [
               "Unlimited car listings",
               "Enhanced showroom profile",
-              "Priority in search results",
-              "Advanced analytics"
-            ],
-            listingLimit: null // unlimited
+              "Priority search placement",
+              "Phone support",
+              "Detailed analytics"
+            ]
           },
           {
             id: "vip",
             name: "VIP",
-            price: 49.99,
-            priceDisplay: "$49.99",
-            description: "For dealerships and premium sellers",
+            price: 99.99,
+            priceDisplay: "$99.99",
+            listingLimit: null, // unlimited
             features: [
               "Unlimited car listings",
               "Premium showroom profile",
+              "Top search placement",
               "Featured in VIP section",
-              "Top placement in search results",
-              "Advanced analytics",
-              "Premium support"
-            ],
-            listingLimit: null // unlimited
+              "Dedicated account manager",
+              "Advanced analytics dashboard",
+              "Marketing promotion package"
+            ]
           }
         ];
         
         res.json(tiers);
       } catch (error) {
-        console.error("Failed to get subscription tiers:", error);
-        res.status(500).json({ error: "Failed to get subscription tiers" });
+        res.status(500).json({ error: "Failed to fetch subscription tiers" });
       }
     });
   }

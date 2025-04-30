@@ -53,8 +53,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
+      try {
+        const response = await fetch("/api/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify(credentials),
+        });
+        
+        // Handle non-OK responses
+        if (!response.ok) {
+          const errorData = await response.json();
+          const error = new Error(errorData.error || response.statusText);
+          (error as any).status = response.status;
+          throw error;
+        }
+        
+        // Parse successful response
+        return await response.json();
+      } catch (error) {
+        throw error;
+      }
     },
     onSuccess: (userData) => {
       queryClient.setQueryData(["/api/user"], userData);
@@ -83,8 +104,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
-      const res = await apiRequest("POST", "/api/register", credentials);
-      return await res.json();
+      try {
+        const response = await fetch("/api/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify(credentials),
+        });
+        
+        // Handle non-OK responses
+        if (!response.ok) {
+          const errorData = await response.json();
+          const error = new Error(errorData.error || response.statusText);
+          (error as any).status = response.status;
+          throw error;
+        }
+        
+        // Parse successful response
+        return await response.json();
+      } catch (error) {
+        throw error;
+      }
     },
     onSuccess: (userData) => {
       queryClient.setQueryData(["/api/user"], userData);
