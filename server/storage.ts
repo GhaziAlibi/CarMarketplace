@@ -1005,8 +1005,8 @@ export class DatabaseStorage implements IStorage {
       }
       
       if (subscriptionData.active !== undefined) {
-        setValues.push(`status = $${paramCounter++}`);
-        params.push(subscriptionData.active ? 'active' : 'inactive');
+        setValues.push(`active = $${paramCounter++}`);
+        params.push(subscriptionData.active);
       }
       
       // Add updated_at to always update the timestamp
@@ -1052,7 +1052,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await db.execute(sql`
         UPDATE subscriptions
-        SET status = 'inactive', end_date = NOW(), updated_at = NOW()
+        SET active = false, end_date = NOW(), updated_at = NOW()
         WHERE id = ${id}
         RETURNING id
       `);
