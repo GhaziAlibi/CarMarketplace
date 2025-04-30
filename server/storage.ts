@@ -979,50 +979,56 @@ export class DatabaseStorage implements IStorage {
   
   async updateSubscription(id: number, subscriptionData: Partial<Subscription>): Promise<Subscription | undefined> {
     try {
-      // Build the SQL SET clause dynamically based on what fields are provided
-      const setValues: string[] = [];
-      const params: any[] = [];
-      let paramCounter = 1;
+      // Use SQL tagged template to safely handle parameters
+      const updateFields = [];
+      const params = [];
       
+      // Only add fields that are defined in the input data
       if (subscriptionData.tier !== undefined) {
-        setValues.push(`tier = $${paramCounter++}`);
         params.push(subscriptionData.tier);
+        updateFields.push(`tier = $${params.length}`);
+      }
+      
+      if (subscriptionData.startDate !== undefined) {
+        params.push(subscriptionData.startDate);
+        updateFields.push(`start_date = $${params.length}`);
       }
       
       if (subscriptionData.endDate !== undefined) {
-        setValues.push(`end_date = $${paramCounter++}`);
         params.push(subscriptionData.endDate);
+        updateFields.push(`end_date = $${params.length}`);
       }
       
       if (subscriptionData.stripeCustomerId !== undefined) {
-        setValues.push(`stripe_customer_id = $${paramCounter++}`);
         params.push(subscriptionData.stripeCustomerId);
+        updateFields.push(`stripe_customer_id = $${params.length}`);
       }
       
       if (subscriptionData.stripeSubscriptionId !== undefined) {
-        setValues.push(`stripe_subscription_id = $${paramCounter++}`);
         params.push(subscriptionData.stripeSubscriptionId);
+        updateFields.push(`stripe_subscription_id = $${params.length}`);
       }
       
       if (subscriptionData.active !== undefined) {
-        setValues.push(`active = $${paramCounter++}`);
         params.push(subscriptionData.active);
+        updateFields.push(`active = $${params.length}`);
       }
       
-      // Add updated_at to always update the timestamp
-      setValues.push(`updated_at = NOW()`);
+      // Always update the timestamp
+      updateFields.push('updated_at = NOW()');
       
-      if (setValues.length === 0) {
-        return await this.getSubscription(id); // Nothing to update, return current
+      if (updateFields.length === 0 && !('endDate' in subscriptionData)) {
+        // No changes requested, return current subscription
+        return await this.getSubscription(id);
       }
       
-      // Add the subscription ID to the params
+      // Add ID parameter last
       params.push(id);
       
       const sql = `
         UPDATE subscriptions 
-        SET ${setValues.join(', ')}
-        WHERE id = $${paramCounter}
+        SET ${updateFields.join(', ')}
+        WHERE id = $${params.length}
         RETURNING *
       `;
       
