@@ -10,11 +10,23 @@ services:
     environment:
       - NODE_ENV=production
       - HOST=0.0.0.0
+      - PORT=5000
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/automart
       - SESSION_SECRET=secret_session_key_change_in_production
+      # Set to "true" to seed the database on first run
+      - SEED_DATABASE=true
+      # Include Stripe keys if needed
+      # - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      # - VITE_STRIPE_PUBLIC_KEY=${VITE_STRIPE_PUBLIC_KEY}
     restart: unless-stopped
     volumes:
       - ./uploads:/app/uploads
+    # Uncomment to view logs in real-time
+    # logging:
+    #   driver: "json-file"
+    #   options:
+    #     max-size: "10m"
+    #     max-file: "3"
 
   postgres:
     image: postgres:15-alpine
@@ -27,6 +39,12 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
+    # Healthcheck to ensure database is ready before app starts
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:

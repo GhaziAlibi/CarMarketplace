@@ -37,11 +37,28 @@ The application can be run using Docker Compose for a complete environment inclu
    cp .env.example .env
    ```
 3. Edit the `.env` file with your configuration
-4. Build and start the containers:
+4. Update the build script in package.json to include seeding:
+   ```json
+   "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist && esbuild server/seed.ts --platform=node --packages=external --bundle --format=esm --outdir=dist"
    ```
+5. Build and start the containers:
+   ```
+   docker-compose build
    docker-compose up -d
    ```
-5. Access the application at http://localhost:5000
+6. Access the application at http://localhost:5000
+7. View logs with:
+   ```
+   docker-compose logs -f
+   ```
+
+### Docker Commands
+
+- Build the containers: `docker-compose build`
+- Start the application: `docker-compose up -d`
+- Stop the application: `docker-compose down`
+- View logs: `docker-compose logs -f`
+- Access PostgreSQL: `docker-compose exec postgres psql -U postgres -d automart`
 
 ### Environment Variables
 
