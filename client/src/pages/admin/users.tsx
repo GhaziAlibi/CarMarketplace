@@ -6,6 +6,7 @@ import Footer from "@/components/layout/footer";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { UserRole, User as UserType } from "@shared/schema";
+import SubscriptionDialog from "@/components/admin/subscription-dialog";
 import {
   Table,
   TableBody,
@@ -78,6 +79,8 @@ const AdminUsers: React.FC = () => {
   const [userToDelete, setUserToDelete] = useState<number | null>(null);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [userToChangeStatus, setUserToChangeStatus] = useState<{id: number, enable: boolean} | null>(null);
+  const [subscriptionDialogOpen, setSubscriptionDialogOpen] = useState(false);
+  const [userIdForSubscription, setUserIdForSubscription] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const itemsPerPage = 10;
@@ -414,11 +417,15 @@ const AdminUsers: React.FC = () => {
                                 </DropdownMenuItem>
                                 
                                 {user.role === UserRole.SELLER && (
-                                  <DropdownMenuItem asChild>
-                                    <Link href={`/admin/manage-subscription/${user.id}`} className="w-full flex items-center">
-                                      <CreditCard className="h-4 w-4 mr-2" />
-                                      Manage Subscription
-                                    </Link>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setUserIdForSubscription(user.id);
+                                      setSubscriptionDialogOpen(true);
+                                    }}
+                                    className="cursor-pointer"
+                                  >
+                                    <CreditCard className="h-4 w-4 mr-2" />
+                                    Manage Subscription
                                   </DropdownMenuItem>
                                 )}
                                 
@@ -576,6 +583,16 @@ const AdminUsers: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Subscription Management Dialog */}
+      <SubscriptionDialog 
+        open={subscriptionDialogOpen}
+        onClose={() => {
+          setSubscriptionDialogOpen(false);
+          setUserIdForSubscription(null);
+        }}
+        userId={userIdForSubscription}
+      />
       
       <Footer />
     </div>

@@ -96,21 +96,26 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   const {
     data: subscription,
     isLoading: isLoadingSubscription,
+    error: subscriptionError,
   } = useQuery<Subscription | null>({
     queryKey: [`/api/admin/users/${userId}/subscription`],
     enabled: !!userId && open,
     retry: false,
-    onError: (error) => {
-      // Log the error but don't show toast, as user might not have a subscription yet
-      console.log("Subscription fetch error:", error);
-    },
   });
+  
+  // Handle subscription fetch error
+  React.useEffect(() => {
+    if (subscriptionError) {
+      // Log the error but don't show toast, as user might not have a subscription yet
+      console.log("Subscription fetch error:", subscriptionError);
+    }
+  }, [subscriptionError]);
 
   // Fetch subscription tiers info (for display purposes)
   const {
     data: tiers = [],
     isLoading: isLoadingTiers,
-  } = useQuery({
+  } = useQuery<any[]>({
     queryKey: ["/api/subscription-tiers"],
     enabled: open,
   });
@@ -131,7 +136,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
     if (subscription) {
       form.reset({
         tier: subscription.tier as SubscriptionTier,
-        active: subscription.active,
+        active: subscription.active === null ? true : subscription.active,
         startDate: subscription.startDate ? new Date(subscription.startDate) : new Date(),
         endDate: subscription.endDate ? new Date(subscription.endDate) : null,
       });
