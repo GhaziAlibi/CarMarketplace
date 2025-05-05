@@ -35,8 +35,9 @@ const ShowroomCard: React.FC<ShowroomCardProps> = ({
   // Generate star ratings
   const renderStars = () => {
     const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
+    const ratingValue = rating || 0;
+    const fullStars = Math.floor(ratingValue);
+    const hasHalfStar = ratingValue % 1 >= 0.5;
 
     for (let i = 0; i < fullStars; i++) {
       stars.push(<Star key={`star-${i}`} className="h-4 w-4 fill-yellow-400 text-yellow-400" />);
@@ -47,7 +48,7 @@ const ShowroomCard: React.FC<ShowroomCardProps> = ({
     }
 
     // Add empty stars
-    const emptyStars = 5 - Math.ceil(rating);
+    const emptyStars = 5 - Math.ceil(ratingValue);
     for (let i = 0; i < emptyStars; i++) {
       stars.push(<Star key={`empty-star-${i}`} className="h-4 w-4 text-yellow-400" />);
     }
@@ -69,10 +70,7 @@ const ShowroomCard: React.FC<ShowroomCardProps> = ({
                   className="h-full w-full object-cover"
                 />
               </div>
-              <Badge className="absolute -top-2 -right-2 bg-amber-500 hover:bg-amber-600 text-white flex items-center gap-1 px-2 py-1 rounded-full">
-                <Award className="h-3.5 w-3.5" />
-                <span>VIP</span>
-              </Badge>
+              {/* Badge is added at the container level in showrooms-page.tsx */}
             </div>
           </div>
           
@@ -81,9 +79,6 @@ const ShowroomCard: React.FC<ShowroomCardProps> = ({
               <div>
                 <div className="flex items-center">
                   <h3 className="text-xl font-bold text-primary">{name}</h3>
-                  <Badge variant="outline" className="ml-2 bg-primary/10 text-primary border-primary/20">
-                    Premium
-                  </Badge>
                 </div>
                 <div className="mt-1 flex items-center">
                   <span className="flex items-center">
@@ -137,7 +132,7 @@ const ShowroomCard: React.FC<ShowroomCardProps> = ({
             <div className="mt-6">
               <Button asChild className="bg-primary hover:bg-primary/90">
                 <Link href={`/showrooms/${id}`}>
-                  View Premium Showroom
+                  View Showroom
                 </Link>
               </Button>
             </div>
@@ -151,14 +146,7 @@ const ShowroomCard: React.FC<ShowroomCardProps> = ({
   return (
     <Card className="bg-white overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-100 h-full flex flex-col">
       <div className="relative">
-        {isFeatured && (
-          <div className="absolute top-3 right-3 z-10">
-            <Badge className="bg-amber-500 hover:bg-amber-600 text-white flex items-center gap-1 px-2 py-1 rounded-full">
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>Premium</span>
-            </Badge>
-          </div>
-        )}
+        {/* Badge is now added at the container level in the showrooms-page.tsx */}
       </div>
       
       <CardContent className="p-6 flex-grow">

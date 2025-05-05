@@ -9,7 +9,8 @@ import {
   Settings, 
   CreditCard,
   PlusCircle,
-  Menu
+  Menu,
+  BarChart3
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "react-i18next";
@@ -109,6 +110,14 @@ const SellerSidebar: React.FC<SellerSidebarProps> = ({
               {t("navigation.messages")}
             </NavLink>
             
+            <NavLink 
+              href="/seller/analytics" 
+              icon={<BarChart3 className="h-4 w-4" />}
+              isActive={isActive("/seller/analytics")}
+            >
+              {t("seller.analytics") || "Analytics"}
+            </NavLink>
+            
             {/* Divider */}
             <div className="h-6 w-px bg-gray-200 mx-2"></div>
             
@@ -146,6 +155,7 @@ const SellerSidebar: React.FC<SellerSidebarProps> = ({
             {isActive("/seller/listings") && t("seller.listings")}
             {isActive("/seller/add-listing") && t("seller.addListing")}
             {isActive("/seller/messages") && t("navigation.messages")}
+            {isActive("/seller/analytics") && (t("seller.analytics") || "Analytics")}
             {isActive("/seller/edit-showroom") && t("seller.showroom")}
             {isActive("/seller/subscription") && t("seller.subscription")}
             {isActive("/seller/account") && t("seller.account")}
@@ -215,6 +225,20 @@ const SellerSidebar: React.FC<SellerSidebarProps> = ({
                     {unreadMessages}
                   </Badge>
                 )}
+              </DropdownMenuItem>
+
+              <DropdownMenuItem 
+                className={cn(
+                  "flex items-center cursor-pointer gap-2",
+                  isActive("/seller/analytics") && "bg-primary/10"
+                )}
+                onClick={() => {
+                  window.history.pushState(null, '', '/seller/analytics');
+                  window.dispatchEvent(new PopStateEvent('popstate'));
+                }}
+              >
+                <BarChart3 className="h-4 w-4" />
+                <span>{t("seller.analytics") || "Analytics"}</span>
               </DropdownMenuItem>
               
               <div className="h-px bg-gray-200 my-2"></div>

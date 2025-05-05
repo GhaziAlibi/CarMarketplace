@@ -4,10 +4,11 @@ import { useLocation } from "wouter";
 import DashboardContent from "./dashboard-content";
 import ListingsContent from "./listings-content";
 import AddListingContent from "./add-listing-content";
-import MessagesContent from "./messages-content";
+import MessagesContent from "./messages-content-new";
 import EditShowroomContent from "./edit-showroom-content";
 import SubscriptionContent from "./subscription-content";
 import AccountContent from "./account-content";
+import AnalyticsContent from "./analytics-content";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2, Store } from "lucide-react";
@@ -32,13 +33,7 @@ const SellerDashboard: React.FC = () => {
     retry: 1, // Only retry once to avoid infinite loading on real errors
   });
   
-  // Log debug information
-  console.log("Dashboard seller component:", { 
-    user, 
-    showroom, 
-    isLoadingShowroom, 
-    isShowroomError 
-  });
+  // Debug information removed
 
   // Fetch only this seller's cars if showroom exists
   const { 
@@ -144,6 +139,12 @@ const SellerDashboard: React.FC = () => {
           component: <AccountContent userData={user} />,
           title: t("seller.account"),
           description: t("seller.accountDesc"),
+        };
+      case "/seller/analytics":
+        return {
+          component: <AnalyticsContent showroom={showroom} cars={cars} />,
+          title: t("seller.analytics") || "Analytics",
+          description: t("seller.analyticsDesc") || "Track your showroom and listing performance",
         };
       default:
         return {

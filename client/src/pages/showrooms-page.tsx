@@ -213,7 +213,7 @@ const ShowroomsPage: React.FC = () => {
                         <div className="absolute -top-1 -right-1 z-10">
                           <Badge className="bg-amber-500 text-white px-2 py-1">
                             <Award className="h-3.5 w-3.5 mr-1" />
-                            VIP
+                            Premium
                           </Badge>
                         </div>
                         <ShowroomCard

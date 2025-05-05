@@ -33,10 +33,21 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  // Configure headers and body based on whether data is provided
+  const headers: HeadersInit = {};
+  let body: string | undefined = undefined;
+  
+  // Only set Content-Type and body if data is provided and not null/undefined
+  if (data != null) {
+    headers["Content-Type"] = "application/json";
+    body = JSON.stringify(data);
+  }
+  
+  // Make the fetch request
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
+    headers,
+    body,
     credentials: "include",
   });
 

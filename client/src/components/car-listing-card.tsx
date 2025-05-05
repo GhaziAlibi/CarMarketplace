@@ -18,6 +18,8 @@ interface CarListingCardProps {
 
 const CarListingCard: React.FC<CarListingCardProps> = ({ car, showroomName, isFavorited = false }) => {
   const { id, title, make, model, year, price, mileage, transmission, fuelType, features, images, isFeatured } = car;
+  // Define a helper type for features
+  const carFeatures: string[] | string | null | undefined = features as string[] | string | null | undefined;
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -91,16 +93,16 @@ const CarListingCard: React.FC<CarListingCardProps> = ({ car, showroomName, isFa
           </div>
           <div className="mt-4">
             <div className="flex flex-wrap gap-2">
-              {features && typeof features === 'string' ? (
+              {carFeatures && typeof carFeatures === 'string' ? (
                 // Handle features as a comma-separated string
-                features.split(',').slice(0, 3).map((feature, index) => (
+                carFeatures.split(',').slice(0, 3).map((feature: string, index: number) => (
                   <Badge key={index} variant="outline" className="bg-gray-100 text-gray-800">
                     {feature.trim()}
                   </Badge>
                 ))
-              ) : features && Array.isArray(features) ? (
+              ) : carFeatures && Array.isArray(carFeatures) ? (
                 // Handle features as an array
-                features.slice(0, 3).map((feature, index) => (
+                carFeatures.slice(0, 3).map((feature: string, index: number) => (
                   <Badge key={index} variant="outline" className="bg-gray-100 text-gray-800">
                     {feature}
                   </Badge>
@@ -112,7 +114,7 @@ const CarListingCard: React.FC<CarListingCardProps> = ({ car, showroomName, isFa
             <Button variant="link" className="text-primary p-0 hover:text-primary-dark">
               <Eye className="mr-1 h-4 w-4" /> View Details
             </Button>
-            {user && (
+            {user && user.role === "buyer" && (
               <Button
                 variant="ghost"
                 size="sm"

@@ -211,12 +211,54 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
-    const [user] = await db
-      .update(users)
-      .set(userData)
-      .where(eq(users.id, id))
-      .returning();
-    return user;
+    try {
+      // Map userData fields to database column names
+      const dbUpdateData: Record<string, any> = {};
+      
+      // These fields match directly
+      if (userData.username !== undefined) dbUpdateData.username = userData.username;
+      if (userData.email !== undefined) dbUpdateData.email = userData.email;
+      if (userData.password !== undefined) dbUpdateData.password = userData.password;
+      if (userData.role !== undefined) dbUpdateData.role = userData.role;
+      
+      // These fields need conversion
+      if (userData.isActive !== undefined) dbUpdateData.is_active = userData.isActive;
+      
+      // Skip fields that don't exist in DB (name, phone, avatar)
+      
+      // Update user and return result
+      const result = await db.execute(sql`
+        UPDATE users 
+        SET ${sql.join(
+          Object.entries(dbUpdateData).map(
+            ([key, value]) => sql`${sql.identifier([key])} = ${value}`
+          ),
+          sql`, `
+        )}
+        WHERE id = ${id}
+        RETURNING id, username, password, email, role, created_at, is_active
+      `);
+      
+      if (result.rows.length === 0) return undefined;
+      
+      // Map the result back to the User type
+      const updatedUser = result.rows[0];
+      return {
+        id: updatedUser.id,
+        username: updatedUser.username,
+        password: updatedUser.password,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        name: updatedUser.username,
+        phone: null,
+        avatar: null,
+        isActive: updatedUser.is_active,
+        createdAt: updatedUser.created_at
+      } as User;
+    } catch (error) {
+      console.error('Error in updateUser:', error);
+      return undefined;
+    }
   }
 
   async getAllUsers(): Promise<User[]> {
@@ -532,7 +574,24 @@ export class DatabaseStorage implements IStorage {
       const client = await pool.connect();
       
       try {
-        const result = await client.query('SELECT * FROM cars ORDER BY created_at DESC');
+        // Query cars with subscription tier ordering
+        const query = `
+          SELECT c.*, 
+                 COALESCE(s.tier, 'free') as subscription_tier 
+          FROM cars c
+          LEFT JOIN showrooms sh ON c.showroom_id = sh.id
+          LEFT JOIN users u ON sh.user_id = u.id
+          LEFT JOIN subscriptions s ON u.id = s.user_id
+          ORDER BY
+            CASE 
+              WHEN COALESCE(s.tier, 'free') = 'vip' THEN 1
+              WHEN COALESCE(s.tier, 'free') = 'premium' THEN 2
+              ELSE 3
+            END ASC,
+            c.created_at DESC
+        `;
+        
+        const result = await client.query(query);
         
         // Map database column names to our schema properties
         return result.rows.map(row => ({
@@ -553,7 +612,6 @@ export class DatabaseStorage implements IStorage {
           features: row.features,
           condition: row.condition,
           images: row.images,
-          isFeatured: row.is_featured,
           isSold: row.is_sold,
           createdAt: row.created_at
         })) as Car[];
@@ -659,37 +717,37 @@ export class DatabaseStorage implements IStorage {
       let paramCounter = 1;
 
       if (params.make) {
-        conditions.push(`make ILIKE $${paramCounter}`);
+        conditions.push(`c.make ILIKE $${paramCounter}`);
         queryParams.push(`%${params.make}%`);
         paramCounter++;
       }
 
       if (params.model) {
-        conditions.push(`model ILIKE $${paramCounter}`);
+        conditions.push(`c.model ILIKE $${paramCounter}`);
         queryParams.push(`%${params.model}%`);
         paramCounter++;
       }
 
       if (params.category) {
-        conditions.push(`category = $${paramCounter}`);
+        conditions.push(`c.category = $${paramCounter}`);
         queryParams.push(params.category);
         paramCounter++;
       }
 
       if (params.year) {
-        conditions.push(`year = $${paramCounter}`);
+        conditions.push(`c.year = $${paramCounter}`);
         queryParams.push(params.year);
         paramCounter++;
       }
 
       if (params.transmission) {
-        conditions.push(`transmission = $${paramCounter}`);
+        conditions.push(`c.transmission = $${paramCounter}`);
         queryParams.push(params.transmission);
         paramCounter++;
       }
 
       if (params.fuelType) {
-        conditions.push(`fuel_type = $${paramCounter}`);
+        conditions.push(`c.fuel_type = $${paramCounter}`);
         queryParams.push(params.fuelType);
         paramCounter++;
       }
@@ -697,26 +755,46 @@ export class DatabaseStorage implements IStorage {
       if (params.priceRange) {
         const [min, max] = params.priceRange.split('-').map(Number);
         if (min && !max) {
-          conditions.push(`price >= $${paramCounter}`);
+          conditions.push(`c.price >= $${paramCounter}`);
           queryParams.push(min);
           paramCounter++;
         } else if (!min && max) {
-          conditions.push(`price <= $${paramCounter}`);
+          conditions.push(`c.price <= $${paramCounter}`);
           queryParams.push(max);
           paramCounter++;
         } else if (min && max) {
-          conditions.push(`price >= $${paramCounter} AND price <= $${paramCounter + 1}`);
+          conditions.push(`c.price >= $${paramCounter} AND c.price <= $${paramCounter + 1}`);
           queryParams.push(min, max);
           paramCounter += 2;
         }
       }
 
-      // Build the SQL query
-      let query = 'SELECT * FROM cars';
+      // Build the SQL query with subscription tier prioritization
+      // Join cars with showrooms and users to get the subscription tier
+      let query = `
+        SELECT c.*, 
+               COALESCE(s.tier, 'free') as subscription_tier 
+        FROM cars c
+        LEFT JOIN showrooms sh ON c.showroom_id = sh.id
+        LEFT JOIN users u ON sh.user_id = u.id
+        LEFT JOIN subscriptions s ON u.id = s.user_id
+      `;
+      
       if (conditions.length > 0) {
         query += ' WHERE ' + conditions.join(' AND ');
       }
-      query += ' ORDER BY created_at DESC';
+      
+      // Order first by subscription tier (VIP > Premium > Free)
+      // Then by creation date (newest first)
+      query += `
+        ORDER BY
+          CASE 
+            WHEN COALESCE(s.tier, 'free') = 'vip' THEN 1
+            WHEN COALESCE(s.tier, 'free') = 'premium' THEN 2
+            ELSE 3
+          END ASC,
+          c.created_at DESC
+      `;
 
       // Use pool directly for raw query
       const client = await pool.connect();
@@ -727,7 +805,28 @@ export class DatabaseStorage implements IStorage {
         client.release();
       }
 
-      return result.rows as Car[];
+      // Convert DB rows to Car objects
+      return result.rows.map(row => ({
+        id: row.id,
+        showroomId: row.showroom_id,
+        title: row.title,
+        make: row.make,
+        model: row.model,
+        year: row.year,
+        price: row.price,
+        mileage: row.mileage,
+        color: row.color,
+        vin: row.vin,
+        transmission: row.transmission,
+        fuelType: row.fuel_type,
+        category: row.category,
+        description: row.description,
+        features: row.features,
+        condition: row.condition,
+        images: row.images,
+        isSold: row.is_sold,
+        createdAt: row.created_at
+      })) as Car[];
     } catch (error) {
       console.error('Error searching cars:', error);
       return [];
@@ -1036,7 +1135,7 @@ export class DatabaseStorage implements IStorage {
       query += updates.join(', ');
       query += ` WHERE id = ${id} RETURNING *`;
       
-      console.log("Executing SQL:", query);
+      // SQL query executed
       
       const result = await db.execute(query);
       

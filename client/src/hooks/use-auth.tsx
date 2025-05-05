@@ -161,15 +161,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/logout");
+      // Use direct fetch instead of apiRequest to avoid the Content-Type header for empty body
+      // This fixes the "unsupported media type" error
+      const response = await fetch("/api/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Logout failed: ${response.status} ${response.statusText}`);
+      }
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
+      queryClient.invalidateQueries(); // Clear all queries on logout
       toast({
         title: "Logged out successfully",
       });
     },
     onError: (error: Error) => {
+      console.error("Logout error:", error);
       toast({
         title: "Logout failed",
         description: error.message,

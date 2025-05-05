@@ -34,12 +34,21 @@ const SubscriptionContent: React.FC = () => {
     queryKey: ["/api/subscriptions/my"],
   });
   
+  interface SubscriptionTier {
+    id: string;
+    name: string;
+    price: number;
+    priceDisplay: string;
+    listingLimit: number | null;
+    features: string[];
+  }
+  
   // Fetch subscription tiers info
   const {
-    data: tiers = [],
+    data: tiers = [] as SubscriptionTier[],
     isLoading: isLoadingTiers,
     isError: isErrorTiers
-  } = useQuery({
+  } = useQuery<SubscriptionTier[]>({
     queryKey: ["/api/subscription-tiers"],
   });
 
@@ -77,16 +86,16 @@ const SubscriptionContent: React.FC = () => {
   }
 
   // Find tier details for current subscription
-  const currentTier = tiers.find((tier: any) => 
+  const currentTier = tiers.find((tier) => 
     tier.id === subscription?.tier.toLowerCase()
   );
 
   // Get next tier
   const getNextTier = () => {
     if (subscription?.tier === SubscriptionTier.FREE) {
-      return tiers.find((tier: any) => tier.id === "premium");
+      return tiers.find((tier) => tier.id === "premium");
     } else if (subscription?.tier === SubscriptionTier.PREMIUM) {
-      return tiers.find((tier: any) => tier.id === "vip");
+      return tiers.find((tier) => tier.id === "vip");
     }
     return null;
   };
@@ -124,7 +133,7 @@ const SubscriptionContent: React.FC = () => {
               <div className="space-y-2">
                 <p className="text-sm font-medium text-gray-500">Status</p>
                 <p className="flex items-center">
-                  {subscription.active ? (
+                  {subscription.status === 'active' ? (
                     <>
                       <span className="h-2 w-2 bg-green-500 rounded-full mr-2"></span>
                       <span className="font-medium text-green-700">Active</span>
@@ -205,7 +214,7 @@ const SubscriptionContent: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tiers.map((tier: any) => (
+              {tiers.map((tier) => (
                 <TableRow key={tier.id} className={subscription?.tier.toLowerCase() === tier.id ? "bg-primary/5" : ""}>
                   <TableCell className="font-medium">
                     <div className="flex items-center">
@@ -219,7 +228,7 @@ const SubscriptionContent: React.FC = () => {
                   <TableCell>{tier.listingLimit ? `${tier.listingLimit} max` : "Unlimited"}</TableCell>
                   <TableCell>
                     <ul className="list-disc pl-4 space-y-1">
-                      {tier.features.map((feature: string, index: number) => (
+                      {tier.features.map((feature, index) => (
                         <li key={index} className="text-sm">{feature}</li>
                       ))}
                     </ul>

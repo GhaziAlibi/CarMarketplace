@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { UserRole, User as UserType } from "@shared/schema";
+import { UserRole, User as UserType, SubscriptionTier } from "@shared/schema";
 import SubscriptionDialog from "@/components/admin/subscription-dialog";
 import {
   Table,
@@ -71,9 +71,25 @@ import {
   CreditCard
 } from "lucide-react";
 
+interface UserWithSubscription extends UserType {
+  subscription?: {
+    id: number;
+    tier: string;
+    status: string;
+    listingLimit: number | null;
+    startDate: string | null;
+    endDate: string | null;
+    createdAt: string;
+    userId: number;
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
+  } | null;
+}
+
 const AdminUsers: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState<string>("");
+  const [selectedTier, setSelectedTier] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<number | null>(null);
@@ -85,13 +101,13 @@ const AdminUsers: React.FC = () => {
   const queryClient = useQueryClient();
   const itemsPerPage = 10;
   
-  // Fetch all users
+  // Fetch all users with their subscription data
   const { 
-    data: users = [] as UserType[], 
+    data: usersWithSubscriptions = [] as UserWithSubscription[], 
     isLoading, 
     isError, 
-  } = useQuery<UserType[]>({
-    queryKey: ["/api/users"],
+  } = useQuery<UserWithSubscription[]>({
+    queryKey: ["/api/admin/users-with-subscriptions"],
   });
   
   // Delete user mutation (note: in a real app, you would probably deactivate rather than delete)
@@ -102,6 +118,7 @@ const AdminUsers: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users-with-subscriptions"] });
       toast({
         title: "User deleted",
         description: "The user has been successfully deleted from the system.",
@@ -125,6 +142,7 @@ const AdminUsers: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users-with-subscriptions"] });
       toast({
         title: "User Enabled",
         description: "The user has been successfully enabled and can now access the system.",
@@ -148,6 +166,7 @@ const AdminUsers: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users-with-subscriptions"] });
       toast({
         title: "User Disabled",
         description: "The user has been successfully disabled and can no longer access the system.",
@@ -165,7 +184,7 @@ const AdminUsers: React.FC = () => {
   });
   
   // Filter users
-  const filteredUsers = (users || []).filter((user: UserType) => {
+  const filteredUsers = usersWithSubscriptions.filter((user: UserWithSubscription) => {
     const matchesSearch = !searchQuery || (
       (user.name && user.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (user.email && user.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -174,7 +193,11 @@ const AdminUsers: React.FC = () => {
     
     const matchesRole = !selectedRole || selectedRole === 'all' || (user.role && user.role === selectedRole);
     
-    return matchesSearch && matchesRole;
+    const matchesTier = !selectedTier || selectedTier === 'all' || 
+      (selectedTier === 'none' && !user.subscription) ||
+      (user.subscription && user.subscription.tier === selectedTier);
+    
+    return matchesSearch && matchesRole && matchesTier;
   });
   
   // Pagination
@@ -261,7 +284,7 @@ const AdminUsers: React.FC = () => {
                   </div>
                 </div>
                 
-                <div className="w-full md:w-auto">
+                <div className="w-full md:w-auto flex flex-col md:flex-row gap-3">
                   <Select value={selectedRole} onValueChange={setSelectedRole}>
                     <SelectTrigger className="w-full sm:w-[180px]">
                       <SelectValue placeholder="Filter by role" />
@@ -271,6 +294,19 @@ const AdminUsers: React.FC = () => {
                       <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>
                       <SelectItem value={UserRole.SELLER}>Seller</SelectItem>
                       <SelectItem value={UserRole.BUYER}>Buyer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={selectedTier} onValueChange={setSelectedTier}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Filter by subscription" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Subscriptions</SelectItem>
+                      <SelectItem value="none">No Subscription</SelectItem>
+                      <SelectItem value={SubscriptionTier.FREE}>Free</SelectItem>
+                      <SelectItem value={SubscriptionTier.PREMIUM}>Premium</SelectItem>
+                      <SelectItem value={SubscriptionTier.VIP}>VIP</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -288,7 +324,10 @@ const AdminUsers: React.FC = () => {
                 <AlertTriangle className="h-10 w-10 text-amber-500 mb-4" />
                 <h3 className="text-lg font-medium mb-2">Error Loading Users</h3>
                 <p className="text-gray-500 mb-4">There was a problem fetching the user data.</p>
-                <Button onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/users"] })}>
+                <Button onClick={() => {
+                  queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+                  queryClient.invalidateQueries({ queryKey: ["/api/admin/users-with-subscriptions"] });
+                }}>
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Retry
                 </Button>
@@ -300,17 +339,18 @@ const AdminUsers: React.FC = () => {
                 <Users className="h-10 w-10 text-gray-400 mb-4" />
                 <h3 className="text-lg font-medium mb-2">No Users Found</h3>
                 <p className="text-gray-500">
-                  {searchQuery || selectedRole
+                  {searchQuery || selectedRole || selectedTier
                     ? "No users match your current filters."
                     : "There are no users in the system yet."}
                 </p>
-                {(searchQuery || selectedRole) && (
+                {(searchQuery || selectedRole || selectedTier) && (
                   <Button
                     className="mt-4"
                     variant="outline"
                     onClick={() => {
                       setSearchQuery("");
                       setSelectedRole("");
+                      setSelectedTier("");
                     }}
                   >
                     Clear Filters
@@ -330,12 +370,13 @@ const AdminUsers: React.FC = () => {
                         <TableHead>Email</TableHead>
                         <TableHead>Role</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead>Subscription</TableHead>
                         <TableHead>Joined</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {paginatedUsers.map((user: UserType) => (
+                      {paginatedUsers.map((user: UserWithSubscription) => (
                         <TableRow key={user.id}>
                           <TableCell>
                             <div className="flex items-center gap-3">
@@ -376,19 +417,38 @@ const AdminUsers: React.FC = () => {
                           </TableCell>
                           <TableCell>
                             <Badge
-                              variant={user.isActive ? "outline" : "secondary"}
+                              variant={user.isActive !== false ? "outline" : "secondary"}
                               className={`
-                                ${user.isActive 
+                                ${user.isActive !== false
                                   ? 'bg-green-50 text-green-700' 
                                   : 'bg-red-50 text-red-700'}
                               `}
                             >
-                              {user.isActive ? (
+                              {user.isActive !== false ? (
                                 <><Shield className="h-3 w-3 mr-1 inline" /> Active</>
                               ) : (
                                 <><ShieldAlert className="h-3 w-3 mr-1 inline" /> Disabled</>
                               )}
                             </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {user.subscription ? (
+                              <Badge
+                                variant="outline"
+                                className={`
+                                  ${user.subscription.tier === SubscriptionTier.FREE ? 'bg-gray-50 text-gray-700' : ''}
+                                  ${user.subscription.tier === SubscriptionTier.PREMIUM ? 'bg-blue-50 text-blue-700' : ''}
+                                  ${user.subscription.tier === SubscriptionTier.VIP ? 'bg-amber-50 text-amber-700' : ''}
+                                  ${user.subscription.status !== 'active' ? 'opacity-60' : ''}
+                                `}
+                              >
+                                <CreditCard className="h-3 w-3 mr-1 inline" />
+                                {user.subscription.tier.charAt(0).toUpperCase() + user.subscription.tier.slice(1)}
+                                {user.subscription.status !== 'active' && ' (Inactive)'}
+                              </Badge>
+                            ) : (
+                              <span className="text-gray-400 text-sm">No subscription</span>
+                            )}
                           </TableCell>
                           <TableCell>{formatDate(user.createdAt)}</TableCell>
                           <TableCell className="text-right">
@@ -409,18 +469,13 @@ const AdminUsers: React.FC = () => {
                                     </Link>
                                   </DropdownMenuItem>
                                 )}
-                                <DropdownMenuItem asChild>
-                                  <Button variant="ghost" className="w-full justify-start cursor-not-allowed opacity-50">
-                                    <UserCog className="h-4 w-4 mr-2" />
-                                    Edit User
-                                  </Button>
-                                </DropdownMenuItem>
+
                                 
                                 {user.role === UserRole.SELLER && (
                                   <DropdownMenuItem
                                     onClick={() => {
                                       // Log the user ID for debugging
-                                      console.log("Opening subscription dialog for user ID:", user.id);
+
                                       setUserIdForSubscription(user.id);
                                       setSubscriptionDialogOpen(true);
                                     }}
@@ -434,7 +489,7 @@ const AdminUsers: React.FC = () => {
                                 {user.role !== UserRole.ADMIN && (
                                   <>
                                     <DropdownMenuSeparator />
-                                    {user.isActive ? (
+                                    {user.isActive !== false ? (
                                       <DropdownMenuItem
                                         onClick={() => {
                                           setUserToChangeStatus({ id: user.id, enable: false });

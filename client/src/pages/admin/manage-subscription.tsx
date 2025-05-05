@@ -99,7 +99,7 @@ const ManageSubscription: React.FC = () => {
     retry: false,
     onError: (error) => {
       // Log the error but don't show toast, as user might not have a subscription yet
-      console.log("Subscription fetch error:", error);
+
       // Set subscription to null to handle as new subscription creation
     },
   });

@@ -36,6 +36,33 @@ export const privateAdminSubscriptionRoutes: RouterConfig = {
       }
     });
     
+    // Get all users with their subscription information (admin only)
+    app.get("/api/admin/users-with-subscriptions", requireAdmin, async (req, res) => {
+      try {
+        const users = await storage.getAllUsers();
+        const usersWithSubscriptions = [];
+        
+        for (const user of users) {
+          // Skip password for security
+          const { password, ...userWithoutPassword } = user;
+          
+          // Get user's subscription
+          const subscription = await storage.getSubscriptionByUserId(user.id);
+          
+          // Add to the result array
+          usersWithSubscriptions.push({
+            ...userWithoutPassword,
+            subscription: subscription || null
+          });
+        }
+        
+        res.json(usersWithSubscriptions);
+      } catch (error) {
+        console.error("Error fetching users with subscriptions:", error);
+        res.status(500).json({ error: "Failed to fetch users with subscription data" });
+      }
+    });
+    
     // Get a specific user's subscription (admin only)
     app.get("/api/admin/users/:userId/subscription", requireAdmin, async (req, res) => {
       try {
@@ -81,6 +108,36 @@ export const privateAdminSubscriptionRoutes: RouterConfig = {
           return res.status(400).json({ error: "Invalid subscription tier" });
         }
         
+        // Check if upgrading to VIP tier - we need to enforce the 4 VIP limit
+        if (tier === SubscriptionTier.VIP) {
+          // Get existing subscription to check if it's already VIP
+          const existingSubscription = await storage.getSubscriptionByUserId(userId);
+          const isAlreadyVip = existingSubscription?.tier === SubscriptionTier.VIP;
+          
+          if (!isAlreadyVip) {
+            // Count current active VIP subscriptions
+            const users = await storage.getAllUsers();
+            let vipCount = 0;
+            
+            for (const user of users) {
+              const subscription = await storage.getSubscriptionByUserId(user.id);
+              if (subscription && 
+                  subscription.tier === SubscriptionTier.VIP && 
+                  subscription.status === 'active') {
+                vipCount++;
+              }
+            }
+            
+            // If there are already 4 VIP subscriptions, prevent adding more
+            if (vipCount >= 4) {
+              return res.status(400).json({ 
+                error: "Maximum VIP limit reached", 
+                message: "Only 4 VIP subscriptions are allowed at a time. Please downgrade another VIP subscription before adding a new one."
+              });
+            }
+          }
+        }
+        
         // Prepare data for update
         const subscriptionData: any = {};
         if (tier !== undefined) {
@@ -105,8 +162,6 @@ export const privateAdminSubscriptionRoutes: RouterConfig = {
           subscriptionData.listingLimit = listingLimit;
         }
         
-        console.log("Request body received:", req.body);
-        
         // Handle dates explicitly, allowing null values
         if (startDateStr) {
           try {
@@ -126,8 +181,6 @@ export const privateAdminSubscriptionRoutes: RouterConfig = {
             return res.status(400).json({ error: "Invalid end date format" });
           }
         }
-        
-        console.log("Subscription data to update:", subscriptionData);
         
         // Check if user exists
         const user = await storage.getUser(userId);

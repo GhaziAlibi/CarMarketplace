@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -6,8 +6,30 @@ import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { format } from "date-fns";
-import { MessageSquare, Send, Search, User, Clock, Loader2, Check, ChevronDown } from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
+import { 
+  MessageSquare, 
+  Send, 
+  Search, 
+  User, 
+  Clock, 
+  Loader2, 
+  Check, 
+  ChevronDown, 
+  Phone, 
+  Video, 
+  PenSquare, 
+  FilterX, 
+  Archive, 
+  ArrowLeft,
+  X,
+  Paperclip,
+  Image as ImageIcon,
+  ChevronRight,
+  RefreshCw,
+  Bell,
+  BellOff
+} from "lucide-react";
 import { 
   Card,
   CardContent,
@@ -30,6 +52,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
 } from "@/components/ui/dropdown-menu";
 import {
   Form,
@@ -45,6 +69,10 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useTranslation } from "react-i18next";
 
 interface MessagesContentProps {
   messages: any[];

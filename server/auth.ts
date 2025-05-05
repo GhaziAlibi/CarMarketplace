@@ -15,22 +15,78 @@ declare global {
 
 const scryptAsync = promisify(scrypt);
 
+/**
+ * Hash a password using scrypt with stronger parameters
+ * @param password The password to hash
+ * @returns A string in the format of 'hash.salt'
+ */
 export async function hashPassword(password: string) {
+  if (!password || typeof password !== 'string') {
+    throw new Error('Invalid password provided for hashing');
+  }
+  
+  // Generate a random salt
   const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
+  
+  try {
+    // Use Node's scrypt with a key length of 64 bytes
+    const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+    
+    // Return the hashed password and salt
+    return `${buf.toString("hex")}.${salt}`;
+  } catch (error) {
+    console.error('Error hashing password:', error);
+    throw new Error('Password hashing failed');
+  }
 }
 
+/**
+ * Compare a supplied password with a stored hashed password
+ * @param supplied The supplied plaintext password
+ * @param stored The stored hashed password
+ * @returns True if the passwords match, false otherwise
+ */
 export async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+  if (!supplied || !stored || typeof supplied !== 'string' || typeof stored !== 'string') {
+    return false;
+  }
+  
+  const parts = stored.split(".");
+  if (parts.length !== 2) {
+    return false;
+  }
+  
+  const [hashed, salt] = parts;
+  
+  try {
+    // Convert stored hash to Buffer for comparison
+    const hashedBuf = Buffer.from(hashed, "hex");
+    
+    // Hash the supplied password with the same salt
+    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    
+    // Use constant-time comparison to prevent timing attacks
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch (error) {
+    console.error('Error comparing passwords:', error);
+    return false;
+  }
 }
 
 export function setupAuth(app: Express) {
+  // In production, require a proper session secret
+  if (process.env.NODE_ENV === 'production' && (!process.env.SESSION_SECRET || process.env.SESSION_SECRET === 'automarket-secret-key')) {
+    throw new Error('A secure SESSION_SECRET environment variable must be set in production');
+  }
+  
+  // Generate a random session secret if not provided (for development only)
+  const sessionSecret = process.env.SESSION_SECRET || 
+    (process.env.NODE_ENV !== 'production' 
+      ? randomBytes(32).toString('hex') 
+      : 'automarket-secret-key');
+  
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || "automarket-secret-key",
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
@@ -38,6 +94,7 @@ export function setupAuth(app: Express) {
       maxAge: 1000 * 60 * 60 * 24, // 1 day
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
+      httpOnly: true, // Prevent JavaScript access to cookies
     },
   };
 
@@ -201,11 +258,6 @@ export function requireRole(role: UserRole) {
 }
 
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  console.log("Admin check - isAuthenticated:", req.isAuthenticated());
-  console.log("Admin check - user:", req.user);
-  console.log("Admin check - user role:", req.user?.role);
-  console.log("Admin check - is admin:", req.user?.role === UserRole.ADMIN);
-  
   if (!req.isAuthenticated() || req.user?.role !== UserRole.ADMIN) {
     return res.status(403).json({ error: "Admin access required" });
   }

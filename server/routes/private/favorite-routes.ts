@@ -34,27 +34,38 @@ export const privateFavoriteRoutes: RouterConfig = {
     // Add car to favorites
     app.post("/api/favorites", requireAuth, async (req, res) => {
       try {
-        // Validate request body
-        const validationResult = insertFavoriteSchema.safeParse(req.body);
+        if (!req.user || !req.user.id) {
+          return res.status(401).json({ error: "Authentication required" });
+        }
+        
+        // Validate car ID is present
+        if (!req.body.carId) {
+          return res.status(400).json({ error: "Car ID is required" });
+        }
+        
+        // Manual validation to ensure we capture all errors
+        const favoriteData = {
+          userId: req.user.id,
+          carId: parseInt(req.body.carId, 10)
+        };
+        
+        // Validate again using schema
+        const validationResult = insertFavoriteSchema.safeParse(favoriteData);
         if (!validationResult.success) {
-          return res.status(400).json({ error: validationResult.error.message });
+          return res.status(400).json({ error: JSON.stringify(validationResult.error.errors) });
         }
         
         // Check if already favorited
-        const isFavorite = await storage.isFavorite(req.user!.id, validationResult.data.carId);
+        const isFavorite = await storage.isFavorite(req.user.id, favoriteData.carId);
         if (isFavorite) {
           return res.status(400).json({ error: "Car already in favorites" });
         }
         
         // Create favorite
-        const favoriteData = {
-          ...validationResult.data,
-          userId: req.user!.id,
-        };
-        
         const favorite = await storage.createFavorite(favoriteData);
         res.status(201).json(favorite);
       } catch (error) {
+        console.error("Failed to add favorite:", error);
         res.status(500).json({ error: "Failed to add favorite" });
       }
     });

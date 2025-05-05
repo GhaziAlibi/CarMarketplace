@@ -87,7 +87,6 @@ export const privateShowroomRoutes: RouterConfig = {
         }
         
         const updatedShowroom = await storage.updateShowroom(showroomId, updateData);
-        console.log("Showroom updated successfully:", updatedShowroom);
         res.json(updatedShowroom);
       } catch (error) {
         console.error("Error updating showroom:", error);

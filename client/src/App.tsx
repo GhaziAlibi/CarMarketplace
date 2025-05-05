@@ -45,6 +45,7 @@ function Router() {
       <ProtectedRoute path="/seller/listings" component={SellerDashboardPage} roles={[UserRole.SELLER]} />
       <ProtectedRoute path="/seller/add-listing" component={SellerDashboardPage} roles={[UserRole.SELLER]} />
       <ProtectedRoute path="/seller/messages" component={SellerDashboardPage} roles={[UserRole.SELLER]} />
+      <ProtectedRoute path="/seller/analytics" component={SellerDashboardPage} roles={[UserRole.SELLER]} />
       <ProtectedRoute path="/seller/edit-showroom" component={SellerDashboardPage} roles={[UserRole.SELLER]} />
       <ProtectedRoute path="/seller/subscription" component={SellerDashboardPage} roles={[UserRole.SELLER]} />
       <ProtectedRoute path="/seller/account" component={SellerDashboardPage} roles={[UserRole.SELLER]} />

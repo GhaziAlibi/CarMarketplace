@@ -57,7 +57,6 @@ import {
   Eye,
   Edit,
   Trash2,
-  Star,
   Car,
   Loader2,
   AlertTriangle,
@@ -138,26 +137,7 @@ const AdminListings: React.FC = () => {
     },
   });
   
-  // Toggle featured status mutation
-  const toggleFeaturedMutation = useMutation({
-    mutationFn: async ({ carId, featured }: { carId: number, featured: boolean }) => {
-      await apiRequest("POST", `/api/cars/${carId}/featured`, { featured });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cars"] });
-      toast({
-        title: "Featured status updated",
-        description: "The car featured status has been updated successfully.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update featured status",
-        variant: "destructive",
-      });
-    },
-  });
+  // Featured mutation removed as we're now prioritizing by subscription tier
   
   // Filter and sort data
   const filteredCars = cars.filter((car: any) => {
@@ -232,13 +212,7 @@ const AdminListings: React.FC = () => {
     }
   };
   
-  // Toggle featured status
-  const toggleFeatured = (carId: number, currentStatus: boolean) => {
-    toggleFeaturedMutation.mutate({
-      carId,
-      featured: !currentStatus
-    });
-  };
+  // Featured functionality removed as we're now prioritizing by subscription tier
   
   return (
     <div className="flex flex-col min-h-screen">
@@ -385,7 +359,6 @@ const AdminListings: React.FC = () => {
                         <TableHead>Category</TableHead>
                         <TableHead>Showroom</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Featured</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -432,21 +405,6 @@ const AdminListings: React.FC = () => {
                             >
                               {car.status ? car.status.charAt(0).toUpperCase() + car.status.slice(1) : 'N/A'}
                             </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => toggleFeatured(car.id, car.isFeatured)}
-                              disabled={toggleFeaturedMutation.isPending}
-                            >
-                              <Star
-                                className={`h-5 w-5 ${
-                                  car.isFeatured ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                                }`}
-                              />
-                              <span className="sr-only">Toggle featured</span>
-                            </Button>
                           </TableCell>
                           <TableCell className="text-right">
                             <DropdownMenu>

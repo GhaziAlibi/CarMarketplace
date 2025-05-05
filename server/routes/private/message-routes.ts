@@ -30,6 +30,39 @@ export const privateMessageRoutes: RouterConfig = {
         res.status(500).json({ error: "Failed to get conversation" });
       }
     });
+    
+    // Mark multiple messages as read
+    app.post("/api/messages/mark-read", requireAuth, async (req, res) => {
+      try {
+        const { messageIds } = req.body;
+        
+        if (!messageIds || !Array.isArray(messageIds) || messageIds.length === 0) {
+          return res.status(400).json({ error: "Invalid message IDs" });
+        }
+        
+        const results = await Promise.all(
+          messageIds.map(async (id) => {
+            const message = await storage.getMessage(id);
+            
+            // Skip messages that don't exist or don't belong to the current user
+            if (!message || message.receiverId !== req.user!.id) {
+              return { id, success: false };
+            }
+            
+            await storage.updateMessage(id, { isRead: true });
+            return { id, success: true };
+          })
+        );
+        
+        res.json({ 
+          success: true, 
+          results,
+          markedAsRead: results.filter(r => r.success).length
+        });
+      } catch (error) {
+        res.status(500).json({ error: "Failed to mark messages as read" });
+      }
+    });
 
     // Send a message
     app.post("/api/messages", requireAuth, async (req, res) => {

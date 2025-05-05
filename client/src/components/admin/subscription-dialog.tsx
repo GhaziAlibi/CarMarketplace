@@ -94,7 +94,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   });
   
   // Log user data for debugging
-  console.log("User data fetched:", userData, "userId:", userId, "isUserError:", isUserError);
+
 
   // Fetch user's subscription
   const {
@@ -109,10 +109,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   
   // Handle subscription fetch error
   React.useEffect(() => {
-    if (subscriptionError) {
-      // Log the error but don't show toast, as user might not have a subscription yet
-      console.log("Subscription fetch error:", subscriptionError);
-    }
+    // No need to handle the error here as this might be expected for users without subscriptions
   }, [subscriptionError]);
 
   // Fetch subscription tiers info (for display purposes)
@@ -169,6 +166,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/admin/users/${userId}/subscription`] });
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users-with-subscriptions"] });
       toast({
         title: "Subscription updated",
         description: "The subscription has been updated successfully",

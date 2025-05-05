@@ -90,14 +90,12 @@ export const cars = pgTable("cars", {
   features: json("features").$type<string[]>().default([]),
   condition: text("condition"),
   images: json("images").$type<string[]>().default([]),
-  isFeatured: boolean("is_featured").default(false),
   isSold: boolean("is_sold").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const insertCarSchema = createInsertSchema(cars).omit({
-  id: true,
-  isFeatured: true,
+  id: true, 
   createdAt: true,
 });
 

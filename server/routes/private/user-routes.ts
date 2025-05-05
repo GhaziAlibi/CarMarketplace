@@ -10,7 +10,6 @@ export const privateUserRoutes: RouterConfig = {
     app.get("/api/users", requireAdmin, async (req, res) => {
       try {
         const users = await storage.getAllUsers();
-        console.log("getAllUsers result:", users);
         
         // Remove passwords from response
         const usersWithoutPassword = users.map(user => {

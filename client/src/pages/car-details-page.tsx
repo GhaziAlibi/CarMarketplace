@@ -409,18 +409,22 @@ const CarDetailsPage: React.FC = () => {
                   </Tabs>
                 </CardContent>
                 <CardFooter className="flex justify-between">
-                  <Button
-                    variant="outline"
-                    onClick={() => toggleFavoriteMutation.mutate()}
-                    disabled={!user || toggleFavoriteMutation.isPending}
-                  >
-                    {toggleFavoriteMutation.isPending ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Heart className={`mr-2 h-4 w-4 ${isFavorited ? 'fill-current text-accent' : ''}`} />
-                    )}
-                    {isFavorited ? "Saved" : "Save to Favorites"}
-                  </Button>
+                  {user && user.role === "buyer" ? (
+                    <Button
+                      variant="outline"
+                      onClick={() => toggleFavoriteMutation.mutate()}
+                      disabled={toggleFavoriteMutation.isPending}
+                    >
+                      {toggleFavoriteMutation.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Heart className={`mr-2 h-4 w-4 ${isFavorited ? 'fill-current text-accent' : ''}`} />
+                      )}
+                      {isFavorited ? "Saved" : "Save to Favorites"}
+                    </Button>
+                  ) : (
+                    <div></div> /* Empty div as placeholder to maintain layout */
+                  )}
                   <Button variant="outline" onClick={() => window.navigator.share({ url: window.location.href })}>
                     <Share2 className="mr-2 h-4 w-4" />
                     Share

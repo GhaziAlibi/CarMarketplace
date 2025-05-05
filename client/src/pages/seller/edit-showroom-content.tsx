@@ -2,11 +2,12 @@ import React, { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { useSubscription } from "@/hooks/use-subscription";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { insertShowroomSchema } from "@shared/schema";
+import { insertShowroomSchema, SubscriptionTier } from "@shared/schema";
 import { 
   Card,
   CardContent,
@@ -79,18 +80,17 @@ const COUNTRIES = [
 const EditShowroomContent: React.FC<EditShowroomContentProps> = ({ showroom, isLoading, isError }) => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { features, tier } = useSubscription();
   const [activeTab, setActiveTab] = useState("basic");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   
-  // Debug info
-  console.log("Edit showroom content received props:", { showroom, isLoading, isError });
-  
+
   // Default placeholder logo URL - use when blob URLs fail
   const defaultLogoUrl = "/placeholder-logo.svg";
   
   // Handle blob URL errors by using the default
   const handleImageError = () => {
-    console.log("Image failed to load, replacing with default");
+    // Replace with default when image fails to load
     setLogoPreview(defaultLogoUrl);
   };
   
@@ -268,6 +268,53 @@ const EditShowroomContent: React.FC<EditShowroomContentProps> = ({ showroom, isL
         </CardDescription>
       </CardHeader>
       
+      {/* Subscription Info Banner */}
+      <div className={`mx-6 p-3 rounded-md mb-2 ${
+        tier === SubscriptionTier.FREE 
+          ? 'bg-slate-100 text-slate-700 border border-slate-200' 
+          : tier === SubscriptionTier.PREMIUM 
+            ? 'bg-blue-50 text-blue-700 border border-blue-100' 
+            : 'bg-purple-50 text-purple-700 border border-purple-100'
+      }`}>
+        <div className="flex items-start gap-2">
+          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white ${
+            tier === SubscriptionTier.FREE ? 'bg-slate-500' : 
+            tier === SubscriptionTier.PREMIUM ? 'bg-blue-500' : 'bg-purple-500'
+          }`}>
+            {tier === SubscriptionTier.FREE && '🔹'}
+            {tier === SubscriptionTier.PREMIUM && '✨'}
+            {tier === SubscriptionTier.VIP && '👑'}
+          </div>
+          <div>
+            <h4 className="font-medium text-sm">
+              {tier === SubscriptionTier.FREE ? 'Free Plan' : 
+               tier === SubscriptionTier.PREMIUM ? 'Premium Plan' : 'VIP Plan'}
+            </h4>
+            <p className="text-xs mt-1">
+              {tier === SubscriptionTier.FREE ? 
+                'Upgrade to Premium or VIP to unlock additional features like adding your website and business hours.' : 
+              tier === SubscriptionTier.PREMIUM ? 
+                'You have access to premium features including website links and business hours.' :
+                'You have access to all premium features including priority listings and featured status.'}
+            </p>
+            <div className="mt-2 flex gap-x-3 text-xs flex-wrap">
+              <span className={`inline-flex items-center ${features.listingLimit ? 'text-green-600' : 'text-slate-500'}`}>
+                <span className="mr-1">✓</span> {features.listingLimit} car listings
+              </span>
+              <span className={`inline-flex items-center ${features.canAddWebsite ? 'text-green-600' : 'text-slate-500'}`}>
+                <span className="mr-1">{features.canAddWebsite ? '✓' : '✗'}</span> Website link
+              </span>
+              <span className={`inline-flex items-center ${features.canSetOpeningHours ? 'text-green-600' : 'text-slate-500'}`}>
+                <span className="mr-1">{features.canSetOpeningHours ? '✓' : '✗'}</span> Business hours
+              </span>
+              <span className={`inline-flex items-center ${features.canUploadGalleryImages ? 'text-green-600' : 'text-slate-500'}`}>
+                <span className="mr-1">{features.canUploadGalleryImages ? '✓' : '✗'}</span> Gallery images
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <CardContent className="pt-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid grid-cols-3 w-full max-w-md mb-6">
@@ -327,20 +374,32 @@ const EditShowroomContent: React.FC<EditShowroomContentProps> = ({ showroom, isL
                   name="openingHours"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Opening Hours</FormLabel>
+                      <div className="flex items-center gap-2">
+                        <FormLabel>Opening Hours</FormLabel>
+                        {!features.canSetOpeningHours && (
+                          <span className="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">
+                            Premium Feature
+                          </span>
+                        )}
+                      </div>
                       <FormControl>
                         <Textarea 
-                          placeholder="Mon-Fri: 9am-6pm, Sat: 10am-4pm, Sun: Closed"
+                          placeholder={features.canSetOpeningHours 
+                            ? "Mon-Fri: 9am-6pm, Sat: 10am-4pm, Sun: Closed" 
+                            : "Upgrade to Premium or VIP to add opening hours"}
                           className="min-h-[80px]"
                           value={field.value || ''}
                           onChange={field.onChange}
                           onBlur={field.onBlur}
                           name={field.name}
                           ref={field.ref}
+                          disabled={!features.canSetOpeningHours}
                         />
                       </FormControl>
                       <FormDescription>
-                        List your business hours for potential customers
+                        {features.canSetOpeningHours 
+                          ? "List your business hours for potential customers" 
+                          : "This feature is available on Premium and VIP subscription plans"}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -427,17 +486,32 @@ const EditShowroomContent: React.FC<EditShowroomContentProps> = ({ showroom, isL
                   name="website"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Website</FormLabel>
+                      <div className="flex items-center gap-2">
+                        <FormLabel>Website</FormLabel>
+                        {!features.canAddWebsite && (
+                          <span className="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">
+                            Premium Feature
+                          </span>
+                        )}
+                      </div>
                       <FormControl>
                         <Input 
-                          placeholder="https://yourshowroom.com" 
+                          placeholder={features.canAddWebsite 
+                            ? "https://yourshowroom.com" 
+                            : "Upgrade to Premium or VIP to add your website"}
                           value={field.value || ''}
                           onChange={field.onChange}
                           onBlur={field.onBlur}
                           name={field.name}
                           ref={field.ref}
+                          disabled={!features.canAddWebsite}
                         />
                       </FormControl>
+                      <FormDescription>
+                        {features.canAddWebsite 
+                          ? "Add your website URL to drive traffic to your business" 
+                          : "This feature is available on Premium and VIP subscription plans"}
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -622,12 +696,26 @@ const EditShowroomContent: React.FC<EditShowroomContentProps> = ({ showroom, isL
                 
                 {/* Cover Images Upload */}
                 <div className="space-y-4 pt-6 border-t">
-                  <h3 className="text-lg font-medium">Showroom Photos</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-medium">Showroom Photos</h3>
+                    {!features.canUploadGalleryImages && (
+                      <span className="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">
+                        Premium Feature
+                      </span>
+                    )}
+                    {features.canUploadGalleryImages && (
+                      <span className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-medium">
+                        {features.maxGalleryImages} images max
+                      </span>
+                    )}
+                  </div>
                   
                   <div className="border-2 border-dashed rounded-lg p-4 text-center">
                     <ImageIcon className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground mb-2">
-                      Upload images of your showroom and facilities
+                      {features.canUploadGalleryImages 
+                        ? "Upload images of your showroom and facilities" 
+                        : "Gallery image uploads are available with Premium and VIP subscriptions"}
                     </p>
                     <Input
                       type="file"
@@ -636,14 +724,20 @@ const EditShowroomContent: React.FC<EditShowroomContentProps> = ({ showroom, isL
                       onChange={handleCoverChange}
                       className="hidden"
                       id="cover-upload"
+                      disabled={!features.canUploadGalleryImages || coverPreviews.length >= features.maxGalleryImages}
                     />
                     <Button
                       type="button"
                       variant="outline"
                       onClick={() => document.getElementById('cover-upload')?.click()}
+                      disabled={!features.canUploadGalleryImages || coverPreviews.length >= features.maxGalleryImages}
                     >
                       <Upload className="h-4 w-4 mr-2" />
-                      Upload Images
+                      {features.canUploadGalleryImages 
+                        ? coverPreviews.length >= features.maxGalleryImages 
+                          ? "Image Limit Reached" 
+                          : "Upload Images"
+                        : "Premium Feature"}
                     </Button>
                   </div>
                   
@@ -656,7 +750,7 @@ const EditShowroomContent: React.FC<EditShowroomContentProps> = ({ showroom, isL
                             alt={`Showroom image ${index + 1}`}
                             className="h-24 w-full object-cover rounded-md"
                             onError={(e) => {
-                              console.log("Gallery image failed to load", index);
+                              // Handle gallery image load failure silently
                               e.currentTarget.src = "/placeholder-logo.svg";
                             }}
                             loading="eager"
